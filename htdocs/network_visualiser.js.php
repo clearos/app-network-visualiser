@@ -73,8 +73,8 @@ function get_traffic_data() {
                 setTimeout('get_traffic_data()', 5000);
                 return;
             }
-	    if ($('#report_type').val() == report_graphical) {
-		graph_data(display, json);
+            if ($('#report_type').val() == report_graphical) {
+        		graph_data(display, json);
                 if (timestamp != json.timestamp) {
                     timestamp = json.timestamp;
                     reset_scan();
@@ -86,30 +86,30 @@ function get_traffic_data() {
             for (var index = 0 ; index < json.data.length; index++) {
                 if (display == 'totalbps') {
                     if (isNaN(json.data[index].totalbps) || json.data[index].totalbps == 0)
-                        continue;
+                            continue;
                     field = '<span title=\"' + json.data[index].totalbps + '\"></span>' + format_number(json.data[index].totalbps);
                 } else {
                     if (isNaN(json.data[index].totalbytes) || json.data[index].totalbytes == 0)
                         continue;
                     field = '<span title=\"' + json.data[index].totalbytes + '\"></span>' + format_number(json.data[index].totalbytes);
-		}
-		if ($('#report_type').val() == report_simple) {
-			table_report.fnAddData([
-			    json.data[index].src,
-			    json.data[index].srcport,
-			    json.data[index].dst,
-			    field
-			]);
-		} else if ($('#report_type').val() == report_detailed) {
-			table_report.fnAddData([
-			    json.data[index].src,
-			    json.data[index].srcport,
-	                    json.data[index].proto,
-			    json.data[index].dst,
-	                    json.data[index].dstport,
-			    field
-			]);
-		}
+                }
+                if ($('#report_type').val() == report_simple) {
+    	    		table_report.fnAddData([
+    	    		    json.data[index].src,
+    	    		    json.data[index].srcport,
+    	    		    json.data[index].dst,
+    	    		    field
+    	    		]);
+    	    	} else if ($('#report_type').val() == report_detailed) {
+    	    		table_report.fnAddData([
+    			        json.data[index].src,
+    			        json.data[index].srcport,
+    	                json.data[index].proto,
+    	    		    json.data[index].dst,
+    	                json.data[index].dstport,
+    	    		    field
+    	    		]);
+                }
             }
 
             table_report.fnAdjustColumnSizing();
