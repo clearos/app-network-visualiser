@@ -1,7 +1,7 @@
 
 Name: app-network-visualiser
 Epoch: 1
-Version: 1.0.10
+Version: 1.1.0
 Release: 1%{dist}
 Summary: Network Visualiser
 License: GPLv3
@@ -16,7 +16,7 @@ Requires: app-network
 Captures and displays data flow traversing your network in real-time, displaying source, destination and protocol information in addition to either bandwidth usage or total data captured over an interval.
 
 %package core
-Summary: Network Visualiser - APIs and install
+Summary: Network Visualiser - Core
 License: LGPLv3
 Group: ClearOS/Libraries
 Requires: app-base-core
