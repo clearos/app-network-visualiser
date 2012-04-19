@@ -13,7 +13,7 @@ Requires: app-base
 Requires: app-network
 
 %description
-Captures and displays data flow traversing your network in real-time, displaying source, destination and protocol information in addition to either bandwidth usage or total data captured over an interval.
+The Network Visualiser app captures and displays data flow traversing your network in real-time, displaying source, destination and protocol information in addition to either bandwidth usage or total data captured over an interval.
 
 %package core
 Summary: Network Visualiser - Core
@@ -24,7 +24,7 @@ Requires: app-network-core
 Requires: jnettop
 
 %description core
-Captures and displays data flow traversing your network in real-time, displaying source, destination and protocol information in addition to either bandwidth usage or total data captured over an interval.
+The Network Visualiser app captures and displays data flow traversing your network in real-time, displaying source, destination and protocol information in addition to either bandwidth usage or total data captured over an interval.
 
 This package provides the core API and libraries.
 
