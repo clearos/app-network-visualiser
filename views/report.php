@@ -6,10 +6,10 @@
  * @category   Apps
  * @package    Nework_Visualiser
  * @subpackage Views
- * @author     ClearCenter <developer@clearcenter.com>
- * @copyright  2011 ClearCenter
- * @license    http://www.clearcenter.com/Company/terms.html ClearSDN license
- * @link       http://www.clearcenter.com/support/documentation/clearos/network_visualiser/
+ * @author     ClearFoundation <developer@clearfoundation.com>
+ * @copyright  2011 ClearFoundation
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU General Public License version 3 or later
+ * @link       http://www.clearfoundation.com/docs/developer/apps/flexshare/
  */
 
 ///////////////////////////////////////////////////////////////////////////////
