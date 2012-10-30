@@ -5,7 +5,7 @@
 /////////////////////////////////////////////////////////////////////////////
 
 $app['basename'] = 'network_visualiser';
-$app['version'] = '1.1.0';
+$app['version'] = '1.4.1';
 $app['release'] = '1';
 $app['vendor'] = 'ClearFoundation';
 $app['packager'] = 'ClearFoundation';
@@ -19,8 +19,8 @@ $app['description'] = lang('network_visualiser_app_description');
 /////////////////////////////////////////////////////////////////////////////
 
 $app['name'] = lang('network_visualiser_app_name');
-$app['category'] = lang('base_category_network');
-$app['subcategory'] = lang('base_subcategory_bandwidth_and_qos');
+$app['category'] = lang('base_category_reports');
+$app['subcategory'] = lang('base_category_network');
 
 /////////////////////////////////////////////////////////////////////////////
 // Controllers
