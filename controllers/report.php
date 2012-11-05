@@ -61,7 +61,7 @@ class Report extends ClearOS_Controller
 
     function index()
     {
-	clearos_profile(__METHOD__, __LINE__);
+        clearos_profile(__METHOD__, __LINE__);
 
         // Load dependencies
         //------------------

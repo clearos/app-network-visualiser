@@ -224,32 +224,27 @@ class Network_Visualiser
     {
         clearos_profile(__METHOD__, __LINE__);
 
-        try {
-            $file = new File(CLEAROS_TEMP_DIR . "/" . self::FILE_DUMP);
+        $file = new File(CLEAROS_TEMP_DIR . "/" . self::FILE_DUMP);
 
-            if ($file->exists())
-                $file->delete();
-            $file->create('webconfig', 'webconfig', '0644');
-            $file->add_lines("timestamp=" . time() . "\n");
-            sleep(1);
-        } catch (Exception $e) {
-            throw new Engine_Exception(clearos_exception_message($e), CLEAROS_ERROR);
-        }
+        if ($file->exists())
+            $file->delete();
 
-        try {
-            $shell = new Shell();
-            $args = "-i $interface --display text -t $interval --format";
-            $fields = $this->get_fields();
-            $args .= " '";
-            foreach ($fields as $field)
-                $args .= "\$" . $field . "\$,"; 
-            // Strip off the last comma separator and replace with single quote
-            $args = preg_replace("/,$/", "'", $args);
-            $options = array('env' => "LANG=en_US", 'background' => TRUE, 'log' => self::FILE_DUMP);
-            $retval = $shell->execute(self::CMD_JNETTOP, $args, TRUE, $options);
-        } catch (Exception $e) {
-            throw new Engine_Exception(clearos_exception_message($e), CLEAROS_ERROR);
-        }
+        $file->create('webconfig', 'webconfig', '0644');
+        $file->add_lines("timestamp=" . time() . "\n");
+        sleep(1);
+
+        $shell = new Shell();
+        $args = "-i $interface --display text -t $interval --format";
+        $fields = $this->get_fields();
+        $args .= " '";
+
+        foreach ($fields as $field)
+            $args .= "\$" . $field . "\$,"; 
+
+        // Strip off the last comma separator and replace with single quote
+        $args = preg_replace("/,$/", "'", $args);
+        $options = array('env' => "LANG=en_US", 'background' => TRUE, 'log' => self::FILE_DUMP);
+        $retval = $shell->execute(self::CMD_JNETTOP, $args, TRUE, $options);
 
         if ($retval != 0) {
             $errstr = $shell->get_last_output_line();
@@ -420,19 +415,15 @@ class Network_Visualiser
     {
         clearos_profile(__METHOD__, __LINE__);
 
-        try {
-            $file = new File(CLEAROS_TEMP_DIR . "/" . self::FILE_DUMP);
+        $file = new File(CLEAROS_TEMP_DIR . "/" . self::FILE_DUMP);
 
-            if (!$file->Exists()) {
-                throw new Engine_Exception(lang('network_visualiser_no_data'), CLEAROS_ERROR);
-                $file_as_array = array (
-                    'code' => 1,
-                    'errmsg' => lang('network_visualiser_no_data')
-                );
-                return $file_as_array;
-            }
-        } catch (Exception $e) {
-            throw new Engine_Exception(clearos_exception_message($e), CLEAROS_ERROR);
+        if (!$file->Exists()) {
+            throw new Engine_Exception(lang('network_visualiser_no_data'), CLEAROS_ERROR);
+            $file_as_array = array (
+                'code' => 1,
+                'errmsg' => lang('network_visualiser_no_data')
+            );
+            return $file_as_array;
         }
 
         $timestamp = time();
@@ -493,11 +484,7 @@ class Network_Visualiser
 
         $configfile = new Configuration_File(self::FILE_CONFIG);
 
-        try {
-            $this->config = $configfile->Load();
-        } catch (Exception $e) {
-            throw new Engine_Exception(clearos_exception_message($e), CLEAROS_ERROR);
-        }
+        $this->config = $configfile->Load();
 
         $this->is_loaded = TRUE;
     }
@@ -516,15 +503,11 @@ class Network_Visualiser
     {
         clearos_profile(__METHOD__, __LINE__);
 
-        try {
-            $file = new File(self::FILE_CONFIG, TRUE);
-            $match = $file->replace_lines("/^$key\s*=\s*/", "$key=$value\n");
+        $file = new File(self::FILE_CONFIG, TRUE);
+        $match = $file->replace_lines("/^$key\s*=\s*/", "$key=$value\n");
 
-            if (!$match)
-                $file->add_lines("$key=$value\n");
-        } catch (Exception $e) {
-            throw new Engine_Exception(clearos_exception_message($e), CLEAROS_ERROR);
-        }
+        if (!$match)
+            $file->add_lines("$key=$value\n");
 
         $this->is_loaded = FALSE;
     }

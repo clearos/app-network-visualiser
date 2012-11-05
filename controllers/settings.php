@@ -62,7 +62,7 @@ class Settings extends ClearOS_Controller
 
     function index()
     {
-	clearos_profile(__METHOD__, __LINE__);
+        clearos_profile(__METHOD__, __LINE__);
 
         // Load dependencies
         //------------------
@@ -88,9 +88,10 @@ class Settings extends ClearOS_Controller
                 $this->network_visualiser->set_display($this->input->post('display'));
                 $this->network_visualiser->set_report_type($this->input->post('report_type'));
                 $this->page->set_status_updated();
-		if ($this->input->post('report_type') == Network_Visualiser::REPORT_DETAILED)
+
+                if ($this->input->post('report_type') == Network_Visualiser::REPORT_DETAILED)
                     redirect('/network_visualiser/detailed');
-		else
+                else
                     redirect('/network_visualiser');
             } catch (Exception $e) {
                 $this->page->view_exception($e);
