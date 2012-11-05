@@ -398,7 +398,7 @@ class Network_Visualiser
         clearos_profile(__METHOD__, __LINE__);
 
         $options = array(
-            'totalbps' => lang('network_visualiser_bandwidth'),
+            'totalbps' => lang('network_bandwidth'),
             'totalbytes' => lang('network_visualiser_total_transfer')
         );
 
@@ -417,11 +417,11 @@ class Network_Visualiser
 
         $file = new File(CLEAROS_TEMP_DIR . "/" . self::FILE_DUMP);
 
-        if (!$file->Exists()) {
-            throw new Engine_Exception(lang('network_visualiser_no_data'), CLEAROS_ERROR);
+        if (!$file->exists()) {
+            throw new Engine_Exception(lang('base_nothing_to_report'));
             $file_as_array = array (
                 'code' => 1,
-                'errmsg' => lang('network_visualiser_no_data')
+                'errmsg' => lang('base_nothing_to_report')
             );
             return $file_as_array;
         }
@@ -453,7 +453,7 @@ class Network_Visualiser
         if (empty($file_as_array)) {
             $file_as_array = array (
                 'code' => 1,
-                'errmsg' => lang('network_visualiser_no_data')
+                'errmsg' => lang('base_nothing_to_report')
             );
             return $file_as_array;
         }

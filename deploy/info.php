@@ -39,7 +39,7 @@ $app['requires'] = array(
 );
 
 $app['core_requires'] = array(
-    'app-network-core',
+    'app-network-core >= 1:1.4.3',
     'jnettop'
 );
 

@@ -39,18 +39,18 @@ else
 
 if ($report_type == Network_Visualiser::REPORT_DETAILED) {
     $headers = array(
-        lang('network_visualiser_source'),
-        lang('network_visualiser_source_port'),
-        lang('network_visualiser_protocol'),
-        lang('network_visualiser_destination'),
-        lang('network_visualiser_destination_port'),
+        lang('network_source'),
+        lang('network_source_port'),
+        lang('network_protocol'),
+        lang('network_destination'),
+        lang('network_destination_port'),
         ($display == 'totalbps' ? lang('network_bandwidth') : lang('network_visualiser_total_transfer'))
     );
 } else {
     $headers = array(
-        lang('network_visualiser_source'),
-        lang('network_visualiser_source_port'),
-        lang('network_visualiser_destination'),
+        lang('network_source'),
+        lang('network_source_port'),
+        lang('network_destination'),
         ($display == 'totalbps' ? lang('network_bandwidth') : lang('network_visualiser_total_transfer'))
     );
 }
