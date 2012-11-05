@@ -13,5 +13,4 @@ $lang['network_visualiser_report'] = 'Report Format';
 $lang['network_visualiser_report_simple'] = 'Tabular - Simple';
 $lang['network_visualiser_top_users'] = 'Top Bandwidth Consumers';
 $lang['network_visualiser_total_transfer'] = 'Total Transfer';
-$lang['network_visualiser_total_transfer'] = 'Total Transfer';
 $lang['network_visualiser_traffic_summary'] = 'Network Traffic Summary';
