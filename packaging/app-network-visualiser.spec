@@ -1,7 +1,7 @@
 
 Name: app-network-visualiser
 Epoch: 1
-Version: 1.4.2
+Version: 1.4.6
 Release: 1%{dist}
 Summary: Network Visualiser
 License: GPLv3
@@ -20,7 +20,7 @@ Summary: Network Visualiser - Core
 License: LGPLv3
 Group: ClearOS/Libraries
 Requires: app-base-core
-Requires: app-network-core
+Requires: app-network-core >= 1:1.4.3
 Requires: jnettop
 
 %description core
