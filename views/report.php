@@ -72,7 +72,7 @@ if ($report_type == Network_Visualiser::REPORT_SIMPLE) {
             'no_action' => TRUE,
             'sorting-type' => array(
                 NULL,
-                NULL,
+                'int',
                 NULL,
                 'title-numeric'
             )
@@ -89,10 +89,10 @@ if ($report_type == Network_Visualiser::REPORT_SIMPLE) {
             'no_action' => TRUE,
             'sorting-type' => array(
                 NULL,
+                'int',
                 NULL,
                 NULL,
-                NULL,
-                NULL,
+                'int',
                 'title-numeric'
             )
         )

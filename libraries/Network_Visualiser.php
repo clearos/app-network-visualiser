@@ -105,6 +105,7 @@ class Network_Visualiser
 
     protected $config = NULL;
     protected $is_loaded = FALSE;
+    protected $int_fields = array();
 
     ///////////////////////////////////////////////////////////////////////////////
     // M E T H O D S
@@ -116,6 +117,7 @@ class Network_Visualiser
 
     function __construct()
     {
+        $this->int_fields = array('srcport', 'dstport', 'totalbps', 'totalbytes');
     }
 
     /** Send a plain text message.
@@ -442,7 +444,12 @@ class Network_Visualiser
                 }
                 $index = 0;
                 foreach ($fields as $field) {
-                    $file_as_array[$line][$field] = $data[$index];
+                    if (in_array($field, $this->int_fields))
+                        $typed_data = (int) $data[$index];
+                    else
+                        $typed_data = $data[$index];
+
+                    $file_as_array[$line][$field] = $typed_data;
                     $index++;
                 }
                 $line++;
