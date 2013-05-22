@@ -3,9 +3,9 @@
 /**
  * AJAX controller for Nework Visualiser.
  *
- * @category   Apps
- * @package    Nework_Visualiser
- * @subpackage Controllers
+ * @category   apps
+ * @package    network-visualiser
+ * @subpackage controllers
  * @author     ClearFoundation <developer@clearfoundation.com>
  * @copyright  2011 ClearFoundation
  * @license    http://www.gnu.org/copyleft/gpl.html GNU General Public License version 3 or later
@@ -45,9 +45,9 @@ use \Exception as Exception;
 /**
  * JSON controller.
  *
- * @category   Apps
- * @package    Nework_Visualiser 
- * @subpackage Controllers
+ * @category   apps
+ * @package    network-visualiser
+ * @subpackage controllers
  * @author     ClearFoundation <developer@clearfoundation.com>
  * @copyright  2011 ClearFoundation
  * @license    http://www.gnu.org/copyleft/gpl.html GNU General Public License version 3 or later
