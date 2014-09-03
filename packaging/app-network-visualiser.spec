@@ -1,7 +1,7 @@
 
 Name: app-network-visualiser
 Epoch: 1
-Version: 1.4.8
+Version: 1.6.5
 Release: 1%{dist}
 Summary: Network Visualiser
 License: GPLv3
@@ -74,7 +74,6 @@ exit 0
 %files core
 %defattr(-,root,root)
 %exclude /usr/clearos/apps/network_visualiser/packaging
-%exclude /usr/clearos/apps/network_visualiser/tests
 %dir /usr/clearos/apps/network_visualiser
 /usr/clearos/apps/network_visualiser/deploy
 /usr/clearos/apps/network_visualiser/language
