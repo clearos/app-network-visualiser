@@ -48,6 +48,7 @@ var display = 'totalbps';
 var report_simple = 0;
 var report_detailed = 1;
 var report_graphical = 2;
+var mapping = '';
 var lang_bits = '<?php echo lang('base_bits'); ?>';
 var lang_kilobits = '<?php echo lang('base_kilobits'); ?>';
 var lang_megabits = '<?php echo lang('base_megabits'); ?>';
@@ -56,6 +57,7 @@ var lang_kilobytes = '<?php echo lang('base_kilobytes'); ?>';
 var lang_kilobytes_per_second = '<?php echo lang('base_kilobytes_per_second'); ?>';
 
 $(document).ready(function() {
+    get_mapped_devices();
     if ($('#report_type').val() == report_simple)
         $('#report tr:last td:eq(2)').html('<div class="theme-loading-normal"></div>');
     else if ($('#report_type').val() == report_detailed)
@@ -66,6 +68,18 @@ $(document).ready(function() {
         get_traffic_data();
     }
 });
+
+function get_mapped_devices() {
+    $.ajax({
+        type: 'GET',
+        dataType: 'json',
+        url: '/app/network_map/mapped/get_mapped_devices',
+        success: function(json) {
+            if (json.error_code == 0)
+                mapping = json.map;
+        }
+    });
+}
 
 function get_traffic_data() {
     $.ajax({
@@ -88,6 +102,7 @@ function get_traffic_data() {
                 }
                 return;
             }
+/*
             table_report.fnClearTable();
             for (var index = 0 ; index < json.data.length; index++) {
                 if (display == 'totalbps') {
@@ -119,6 +134,7 @@ function get_traffic_data() {
             }
 
             table_report.fnAdjustColumnSizing();
+*/
 
             if (timestamp != json.timestamp) {
                 timestamp = json.timestamp;
@@ -185,10 +201,17 @@ function graph_data(display, json) {
             total = json.data[index].totalbytes; 
         if (total == undefined || isNaN(total) || total == 0)
             continue;
-        if (datapoints[json.data[index].src] == undefined)
-            datapoints[json.data[index].src] = parseInt(total/1024);
-        else 
-            datapoints[json.data[index].src] += parseInt(total/1024);
+        if (!(json.data[index].src in mapping)) {
+            if (datapoints[json.data[index].src] == undefined)
+                datapoints[json.data[index].src] = parseInt(total/1024);
+            else 
+                datapoints[json.data[index].src] += parseInt(total/1024);
+        } else {
+            if (datapoints[mapping[json.data[index].src].nickname] == undefined)
+                datapoints[mapping[json.data[index].src].nickname] = parseInt(total/1024);
+            else 
+                datapoints[mapping[json.data[index].src].nickname] += parseInt(total/1024);
+        }
     }
 
     var data = new Array();
