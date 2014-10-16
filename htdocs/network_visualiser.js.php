@@ -41,19 +41,25 @@ clearos_load_language('network_visualiser');
 
 header('Content-Type: application/x-javascript');
 
-echo "
+?>
 
 var timestamp = 0;
 var display = 'totalbps';
 var report_simple = 0;
 var report_detailed = 1;
 var report_graphical = 2;
+var lang_bits = '<?php echo lang('base_bits'); ?>';
+var lang_kilobits = '<?php echo lang('base_kilobits'); ?>';
+var lang_megabits = '<?php echo lang('base_megabits'); ?>';
+var lang_gigabits = '<?php echo lang('base_gigabits'); ?>';
+var lang_kilobytes = '<?php echo lang('base_kilobytes'); ?>';
+var lang_kilobytes_per_second = '<?php echo lang('base_kilobytes_per_second'); ?>';
 
 $(document).ready(function() {
     if ($('#report_type').val() == report_simple)
-        $('#report tr:last td:eq(2)').html('<div class=\"theme-loading-normal\"></div>');
+        $('#report tr:last td:eq(2)').html('<div class="theme-loading-normal"></div>');
     else if ($('#report_type').val() == report_detailed)
-        $('#report tr:last td:eq(3)').html('<div class=\"theme-loading-normal\"></div>');
+        $('#report tr:last td:eq(3)').html('<div class="theme-loading-normal"></div>');
 
     if ($('#report_display').val() != undefined) {
         display = $('#report_display').val();
@@ -87,11 +93,11 @@ function get_traffic_data() {
                 if (display == 'totalbps') {
                     if (isNaN(json.data[index].totalbps) || json.data[index].totalbps == 0)
                             continue;
-                    field = '<span title=\"' + json.data[index].totalbps + '\"></span>' + format_number(json.data[index].totalbps);
+                    field = '<span title="' + json.data[index].totalbps + '"></span>' + format_number(json.data[index].totalbps);
                 } else {
                     if (isNaN(json.data[index].totalbytes) || json.data[index].totalbytes == 0)
                         continue;
-                    field = '<span title=\"' + json.data[index].totalbytes + '\"></span>' + format_number(json.data[index].totalbytes);
+                    field = '<span title="' + json.data[index].totalbytes + '"></span>' + format_number(json.data[index].totalbytes);
                 }
                 if ($('#report_type').val() == report_simple) {
     	    		table_report.fnAddData([
@@ -152,53 +158,37 @@ function format_number (bytes) {
     bits = bytes * 8;
 
     if (display == 'totalbytes') {
-        var sizes = [" .
-            "'" . lang('base_bits') . "'," .
-            "'" . lang('base_kilobits') . "'," .
-            "'" . lang('base_megabits') . "'," .
-            "'" . lang('base_gigabits') . "'
+        var sizes = [
+            lang_bits,
+            lang_kilobits,
+            lang_megabits,
+            lang_gigabits
         ];
     } else {
-        var sizes = [" .
-            "'" . lang('base_bits_per_second') . "'," .
-            "'" . lang('base_kilobits_per_second') . "'," .
-            "'" . lang('base_megabits_per_second') . "'," .
-            "'" . lang('base_gigabits_per_second') . "'
+        var sizes = [
+            lang_bits_per_second,
+            lang_kilobits_per_second,
+            lang_megabits_per_second,
+            lang_gigabits_per_second
         ];
     }
     var i = parseInt(Math.floor(Math.log(bits) / Math.log(1024)));
     return ((i == 0)? (bits / Math.pow(1024, i)) : (bits / Math.pow(1024, i)).toFixed(1)) + ' ' + sizes[i];
 };
 
-jQuery.fn.dataTableExt.oSort['title-numeric-asc']  = function(a,b) {
-    var x = a.match(/title=\"*(-?[0-9\.]+)/)[1];
-    var y = b.match(/title=\"*(-?[0-9\.]+)/)[1];
-    x = parseFloat( x );
-    y = parseFloat( y );
-    return ((x < y) ? -1 : ((x > y) ?  1 : 0));
-};
-
-jQuery.fn.dataTableExt.oSort['title-numeric-desc'] = function(a,b) {
-    var x = a.match(/title=\"*(-?[0-9\.]+)/)[1];
-    var y = b.match(/title=\"*(-?[0-9\.]+)/)[1];
-    x = parseFloat( x );
-    y = parseFloat( y );
-    return ((x < y) ?  1 : ((x > y) ? -1 : 0));
-};
-
 function graph_data(display, json) {
     var datapoints = new Array();
     for (var index = 0 ; index < json.data.length; index++) {
-	if (display == 'totalbps')
-	    total = json.data[index].totalbps; 
+        if (display == 'totalbps')
+            total = json.data[index].totalbps; 
         else
-	    total = json.data[index].totalbytes; 
+            total = json.data[index].totalbytes; 
         if (total == undefined || isNaN(total) || total == 0)
             continue;
-	if (datapoints[json.data[index].src] == undefined)
-	    datapoints[json.data[index].src] = parseInt(total/1024);
-	else 
-	    datapoints[json.data[index].src] += parseInt(total/1024);
+        if (datapoints[json.data[index].src] == undefined)
+            datapoints[json.data[index].src] = parseInt(total/1024);
+        else 
+            datapoints[json.data[index].src] += parseInt(total/1024);
     }
 
     var data = new Array();
@@ -207,30 +197,19 @@ function graph_data(display, json) {
     for (entry in datapoints) {
         data[counter] = [entry,datapoints[entry]]; 
         if (counter >= 10)
-	    break;
-	counter++;
+            break;
+        counter++;
     }
 
-    unit = '" . lang('base_kilobytes') . "';
+    unit = lang_kilobytes;
     if (display == 'totalbps')
-    	unit = '" . lang('base_kilobytes_per_second') . "';
+    	unit = lang_kilobytes_per_second;
 
-    var clear_plot = jQuery.jqplot ('clear-chart', [data],
-    {
-        seriesDefaults: {
-            renderer: jQuery.jqplot.PieRenderer,
-            rendererOptions: {
-                showDataLabels: true,
-                dataLabels: 'value',
-                dataLabelFormatString: '%d ' + unit
-            }
-        },
-        title: '" . lang('network_visualiser_top_users') . "', 
-        legend: { show:true, location: 'ne' }
-    });
-    clear_plot.redraw();
+    var options = {};
+    clearos_pie_chart('nv-top-ten', data, options);
+    clearos_loaded('nv-top-ten-container');
 }
 
-";
-
+<?php
 // vim: ts=4 syntax=javascript
+?>

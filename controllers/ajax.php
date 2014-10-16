@@ -78,7 +78,6 @@ class Ajax extends ClearOS_Controller
         clearos_profile(__METHOD__, __LINE__);
 
         header('Cache-Control: no-cache, must-revalidate');
-        header('Expires: Fri, 01 Jan 2010 05:00:00 GMT');
         header('Content-type: application/json');
         try {
 
@@ -103,7 +102,6 @@ class Ajax extends ClearOS_Controller
         clearos_profile(__METHOD__, __LINE__);
 
         header('Cache-Control: no-cache, must-revalidate');
-        header('Expires: Fri, 01 Jan 2010 05:00:00 GMT');
         header('Content-type: application/json');
 
         // Load dependencies
