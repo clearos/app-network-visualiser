@@ -12,5 +12,6 @@ $lang['network_visualiser_report_graphical'] = 'Graphical';
 $lang['network_visualiser_report_invalid'] = 'Report type is invalid.';
 $lang['network_visualiser_report_simple'] = 'Tabular - Simple';
 $lang['network_visualiser_top_users'] = 'Top Bandwidth Consumers';
+$lang['network_visualiser_bandwidth_distribution'] = 'Bandwidth Distribution';
 $lang['network_visualiser_total_transfer'] = 'Total Transfer';
 $lang['network_visualiser_traffic_summary'] = 'Network Traffic Summary';

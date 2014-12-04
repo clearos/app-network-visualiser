@@ -59,11 +59,13 @@ use \clearos\apps\base\Configuration_File as Configuration_File;
 use \clearos\apps\base\File as File;
 use \clearos\apps\base\Shell as Shell;
 use \clearos\apps\network\Iface_Manager as Iface_Manager;
+use \clearos\apps\web_proxy\Squid as Squid;
 
 clearos_load_library('base/Configuration_File');
 clearos_load_library('base/File');
 clearos_load_library('base/Shell');
 clearos_load_library('network/Iface_Manager');
+clearos_load_library('web_proxy/Squid');
 
 // Exceptions
 //-----------
@@ -97,7 +99,7 @@ class Network_Visualiser
     ///////////////////////////////////////////////////////////////////////////////
 
     const CMD_JNETTOP = '/usr/bin/jnettop';
-    const FILE_CONFIG = '/etc/jnettop.conf';
+    const FILE_CONFIG = '/etc/clearos/network_visualiser.conf';
     const FILE_DUMP = 'jnettop.dmp';
     const REPORT_SIMPLE = 0;
     const REPORT_DETAILED = 1;
@@ -232,8 +234,10 @@ class Network_Visualiser
             $file->delete();
 
         $file->create('webconfig', 'webconfig', '0644');
-        $file->add_lines("timestamp=" . time() . "\n");
-        sleep(1);
+        $file->add_lines("timstamp=" . time() . "\n");
+        $file->add_lines("interval=$interval\n");
+        $file->add_lines("stop=" . strtotime("+$interval seconds") . "\n");
+        //sleep(1);
 
         $shell = new Shell();
         $args = "-i $interface --display text -t $interval --format";
@@ -352,6 +356,60 @@ class Network_Visualiser
     }
 
     /**
+     * Returns the graph options.
+     *
+     * @return array
+     */
+
+    function get_graph_options()
+    {
+        clearos_profile(__METHOD__, __LINE__);
+
+        $options = array();
+
+        // Grab all WAN and LAN interfaces
+
+        $iface_manager = new Iface_Manager();
+
+        $network_interfaces = $iface_manager->get_interface_details();
+
+        foreach ($network_interfaces as $interface => $details) {
+            if ($details['role'] == Iface_Manager::EXTERNAL_ROLE) {
+                $options['pie'][$interface . '-up'] = array (
+                    'interface' => $interface,
+                    'direction' => 'up',
+                    'title' => $interface . ' - WAN Upload'
+                );
+                $options['pie'][$interface . '-dn'] = array (
+                    'interface' => $interface,
+                    'direction' => 'dn',
+                    'title' => $interface . ' - WAN Download'
+                );
+            } else {
+                $options['pie'][$interface] = array (
+                    'interface' => $interface,
+                    'title' => 'LAN Traffic'
+                );
+            }
+        }
+
+        // TODO Translate
+        if (clearos_library_installed('content_filter/Dans_Guardian')) {
+            clearos_load_library('content_filter/Dans_Guardian');
+            $dg = new Dans_Guardian();
+            $options['pie']['content_filter'] = "Content Filter";
+        } else if (clearos_library_installed('web_proxy/Squid')) {
+            clearos_load_library('web_proxy/Squid');
+            $squid = new Squid();
+            $options['pie']['proxy'] = array(
+                'title' => 'Web Proxy'
+            );
+        }
+        
+        return $options;
+    }
+
+    /**
      * Returns the report options.
      *
      * @return array
@@ -438,8 +496,11 @@ class Network_Visualiser
             while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
                 if (preg_match('/^Could not.*$/', $data[0]))
                     continue;
-                if (preg_match('/^timestamp.*/', $data[0])) {
-                    $timestamp = preg_replace('/timestamp=/', '', $data[0]);
+                if (preg_match('/^interval.*/', $data[0])) {
+                    $interval = preg_replace('/interval=/', '', $data[0]);
+                    continue;
+                } else if (preg_match('/^stop.*/', $data[0])) {
+                    $stop = preg_replace('/stop=/', '', $data[0]);
                     continue;
                 }
                 $index = 0;
@@ -457,18 +518,29 @@ class Network_Visualiser
             fclose($handle);
         }
 
+        $timestamp = time();
         if (empty($file_as_array)) {
             $file_as_array = array (
                 'code' => 1,
+                'timestamp' => $timestamp,
+                'stop' => $stop,
+                'next_update' => ($stop - $timestamp) / $interval * 100,
                 'errmsg' => lang('base_nothing_to_report')
             );
             return $file_as_array;
         }
     
+        // Pie
+        $options = $this->get_graph_options();
+        foreach ($options['pie'] as $id => $pie) {
+            $chart_data["pie-$id"] = $file_as_array;
+        }
         $data = array(
             'timestamp' => $timestamp,
+            'stop' => $stop,
+            'next_update' => ($stop - $timestamp) / $interval * 100,
             'code' => 0,
-            'data' => $file_as_array
+            'data' => $chart_data
         );
         
         return $data;
@@ -491,7 +563,7 @@ class Network_Visualiser
 
         $configfile = new Configuration_File(self::FILE_CONFIG);
 
-        $this->config = $configfile->Load();
+        $this->config = $configfile->load();
 
         $this->is_loaded = TRUE;
     }

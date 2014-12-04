@@ -77,7 +77,7 @@ class Report extends ClearOS_Controller
         // Load views
         //-----------
 
-        $data['display'] = $this->network_visualiser->get_display();
+        $data['graph_options'] = $this->network_visualiser->get_graph_options();
 
         $this->page->view_form('report', $data, lang('network_visualiser_app_name'));
     }

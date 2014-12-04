@@ -43,30 +43,36 @@ header('Content-Type: application/x-javascript');
 
 ?>
 
-var timestamp = 0;
 var display = 'totalbps';
 var report_simple = 0;
 var report_detailed = 1;
 var report_graphical = 2;
-var mapping = '';
+var mapping = JSON.stringify('');
 var lang_bits = '<?php echo lang('base_bits'); ?>';
 var lang_kilobits = '<?php echo lang('base_kilobits'); ?>';
 var lang_megabits = '<?php echo lang('base_megabits'); ?>';
 var lang_gigabits = '<?php echo lang('base_gigabits'); ?>';
 var lang_kilobytes = '<?php echo lang('base_kilobytes'); ?>';
 var lang_kilobytes_per_second = '<?php echo lang('base_kilobytes_per_second'); ?>';
+var lang_next_update = '<?php echo lang('base_next_update'); ?>';
 
 $(document).ready(function() {
+    var options = new Object();
+    options.id = 'next-update';
+    options.no_animation = true;
+    clearos_add_sidebar_pair(lang_next_update, clearos_progress_bar(100, options));
     get_mapped_devices();
-    if ($('#report_type').val() == report_simple)
-        $('#report tr:last td:eq(2)').html('<div class="theme-loading-normal"></div>');
-    else if ($('#report_type').val() == report_detailed)
-        $('#report tr:last td:eq(3)').html('<div class="theme-loading-normal"></div>');
-
-    if ($('#report_display').val() != undefined) {
-        display = $('#report_display').val();
-        get_traffic_data();
-    }
+    get_traffic_data();
+    $('.nv-play-pause').on('click', function (e) {
+        e.preventDefault();
+        if ($('#' + this.id + ' i').hasClass('fa-pause')) {
+            $('#' + this.id + ' i').removeClass('fa-pause');
+            $('#' + this.id + ' i').addClass('fa-play');
+        } else {
+            $('#' + this.id + ' i').removeClass('fa-play');
+            $('#' + this.id + ' i').addClass('fa-pause');
+        }
+    });
 });
 
 function get_mapped_devices() {
@@ -83,25 +89,23 @@ function get_mapped_devices() {
 
 function get_traffic_data() {
     $.ajax({
-        type: 'POST',
+        type: 'GET',
         dataType: 'json',
-        data: 'ci_csrf_token=' + $.cookie('ci_csrf_token') + '&display=' + display,
         url: '/app/network_visualiser/ajax/get_traffic_data',
         success: function(json) {
             if (json.code != 0) {
-                // Error will get displayed in sidebar
-                setTimeout('get_traffic_data()', 5000);
+                setTimeout('get_traffic_data()', 900);
                 return;
             }
-            if ($('#report_type').val() == report_graphical) {
-        		graph_data(display, json);
-                if (timestamp != json.timestamp) {
-                    timestamp = json.timestamp;
-                    reset_scan();
-                    setTimeout('get_traffic_data()', 5000);
-                }
-                return;
+            if (json.timestamp > json.stop) {
+                pie_graph_data(json);
+                clearos_set_progress_bar('next-update', 100); 
+                reset_scan();
+            } else {
+                clearos_set_progress_bar('next-update', json.next_update); 
             }
+            setTimeout('get_traffic_data()', 900);
+            return;
 /*
             table_report.fnClearTable();
             for (var index = 0 ; index < json.data.length; index++) {
@@ -135,17 +139,8 @@ function get_traffic_data() {
 
             table_report.fnAdjustColumnSizing();
 */
-
-            if (timestamp != json.timestamp) {
-                timestamp = json.timestamp;
-                reset_scan();
-                setTimeout('get_traffic_data()', 5000);
-            }
         },
         error: function(xhr, text, err) {
-            // Don't display any errors if ajax request was aborted due to page redirect/reload
-            if (xhr['abort'] == undefined)
-                alert(xhr.responseText.toString());
         }
     });
 }
@@ -192,45 +187,61 @@ function format_number (bytes) {
     return ((i == 0)? (bits / Math.pow(1024, i)) : (bits / Math.pow(1024, i)).toFixed(1)) + ' ' + sizes[i];
 };
 
-function graph_data(display, json) {
+function pie_graph_data(json) {
     var datapoints = new Array();
-    for (var index = 0 ; index < json.data.length; index++) {
-        if (display == 'totalbps')
-            total = json.data[index].totalbps; 
-        else
-            total = json.data[index].totalbytes; 
-        if (total == undefined || isNaN(total) || total == 0)
-            continue;
-        if (!(json.data[index].src in mapping)) {
-            if (datapoints[json.data[index].src] == undefined)
-                datapoints[json.data[index].src] = parseInt(total/1024);
-            else 
-                datapoints[json.data[index].src] += parseInt(total/1024);
-        } else {
-            if (datapoints[mapping[json.data[index].src].nickname] == undefined)
-                datapoints[mapping[json.data[index].src].nickname] = parseInt(total/1024);
-            else 
-                datapoints[mapping[json.data[index].src].nickname] += parseInt(total/1024);
+    $('.nv-pie-chart').each(function() {
+        if ($('#' + this.id + '-play i').hasClass('fa-pause')) {
+            // Don't update graph...paused
+            return;
         }
-    }
+        chart_data = json.data[this.id];
+        for (var index = 0 ; index < chart_data.length; index++) {
+            if (display == 'totalbps')
+                total = chart_data[index].totalbps; 
+            else
+                total = chart_data[index].totalbytes; 
+            if (total == undefined || isNaN(total) || total == 0)
+                continue;
+            if (!(chart_data[index].src in mapping)) {
+                if (datapoints[chart_data[index].src] == undefined)
+                    datapoints[chart_data[index].src] = parseInt(total);
+                else 
+                    datapoints[chart_data[index].src] += parseInt(total);
+            } else {
+                if (datapoints[mapping[chart_data[index].src].nickname] == undefined)
+                    datapoints[mapping[chart_data[index].src].nickname] = parseInt(total);
+                else 
+                    datapoints[mapping[chart_data[index].src].nickname] += parseInt(total);
+            }
 
-    var data = new Array();
+        }
+        var data = new Array();
+        counter = 0;
+        for (entry in datapoints) {
+            data[counter] = [entry,datapoints[entry]]; 
+            if (counter >= 9)
+                break;
+            counter++;
+        }
+
+        var options = new Object;
+        clearos_pie_chart(this.id, data, options);
+        clearos_loaded(this.id + '-container');
+    });
+/*
 
     counter = 0;
     for (entry in datapoints) {
         data[counter] = [entry,datapoints[entry]]; 
-        if (counter >= 10)
+        if (counter >= 9)
             break;
         counter++;
     }
 
-    unit = lang_kilobytes;
-    if (display == 'totalbps')
-    	unit = lang_kilobytes_per_second;
-
-    var options = {};
+    var options = new Object;
     clearos_pie_chart('nv-top-ten', data, options);
     clearos_loaded('nv-top-ten-container');
+*/
 }
 
 <?php
