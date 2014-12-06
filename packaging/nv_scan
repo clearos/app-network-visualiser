@@ -1,0 +1,144 @@
+#!/usr/clearos/sandbox/usr/bin/php
+<?php
+
+/**
+ * Network Visualiser scan.
+ *
+ * @category   apps
+ * @package    network_visualiser
+ * @subpackage scripts
+ * @author     ClearFoundation <developer@clearfoundation.com>
+ * @copyright  2014 ClearFoundation
+ * @license    http://www.gnu.org/copyleft/lgpl.html GNU Lesser General Public License version 3 or later
+ * @link       http://www.clearfoundation.com/docs/developer/apps/network_visualiser/
+ */
+
+///////////////////////////////////////////////////////////////////////////////
+// N A M E S P A C E
+///////////////////////////////////////////////////////////////////////////////
+
+namespace clearos\apps\network_visualiser;
+
+///////////////////////////////////////////////////////////////////////////////
+// B O O T S T R A P
+///////////////////////////////////////////////////////////////////////////////
+
+$bootstrap = getenv('CLEAROS_BOOTSTRAP') ? getenv('CLEAROS_BOOTSTRAP') : '/usr/clearos/framework/shared';
+require_once $bootstrap . '/bootstrap.php';
+
+///////////////////////////////////////////////////////////////////////////////
+// T R A N S L A T I O N S
+///////////////////////////////////////////////////////////////////////////////
+
+clearos_load_language('network_visualiser');
+
+///////////////////////////////////////////////////////////////////////////////
+// D E P E N D E N C I E S
+///////////////////////////////////////////////////////////////////////////////
+
+// Classes
+//--------
+
+use \clearos\apps\network_visualiser\Network_Visualiser as Network_Visualiser;
+
+clearos_load_library('network_visualiser/Network_Visualiser');
+
+// Exceptions
+//-----------
+
+use \Exception as Exception;
+
+///////////////////////////////////////////////////////////////////////////////
+// M A I N
+///////////////////////////////////////////////////////////////////////////////
+
+//--------------------------------------------------------------------
+// Command line options
+//--------------------------------------------------------------------
+
+$short_options  = '';
+
+// Common
+$short_options .= 'i::'; // Interface
+$short_options .= 't::'; // Interval Time
+$short_options .= 'o::'; // Output
+$short_options .= 'h';   // Help
+
+$helpopts  = '
+  Common Options
+  --------------
+
+  -i=interface (optional - default first online interface)
+  -t=interval (optional - default 5 seconds)
+  -x=filter  (optional - default no filter - supports multiple filters: -x srcport=80 destip=192.168.0.1)
+  -o=output (json [default] or stdout)
+  -h: help
+
+';
+
+// Handle command line options
+//----------------------------
+
+$options = getopt($short_options);
+
+$interface = isset($options['i']) ? $options['i'] : NULL;
+$interval = isset($options['t']) ? $options['t'] : 5;
+$output = isset($options['o']) ? $options['o'] : 'stdout';
+$help = isset($options['h']) ? TRUE : FALSE;
+
+if ($help) {
+    echo "usage: " . $argv[0] . " [options]\n";
+    echo $helpopts;
+    exit(0);
+}
+
+if (php_sapi_name() === 'cli') {
+    $user = exec('whoami');
+    if ($user != 'root') {
+        update_status(-1, "Script must be run as 'root'.");
+        exit(1);
+    }
+}
+
+$network_visualiser = new Network_Visualiser();
+
+try {
+    if ($interface == NULL) {
+        $interfaces = $network_visualiser->get_interface_options();
+        $interface = key($interfaces);
+    }
+    $network_visualiser->initialize(
+        $interface,
+        $interval,
+        $filters
+    );
+} catch (Exception $e) {
+    update_status(-1, clearos_exception_message($e));
+}
+
+/**
+ * Update status.
+ *
+ * @param string $code     status code
+ * @param string $progress progress
+ * @param string $msg      status message
+ *
+ * @return void
+ */
+
+function update_status($code, $msg)
+{
+    global $output;
+
+    if ($output == 'stdout') {
+        echo $msg . "\n";
+    } else {
+        $info = array (
+            'code' => $code,
+            'timestamp' => time(),
+            'msg' => $msg
+        );
+        echo json_encode($info) . "\n"; 
+    }
+}
+// vim: syntax=php ts=4

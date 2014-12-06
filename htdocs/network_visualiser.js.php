@@ -60,7 +60,8 @@ $(document).ready(function() {
     var options = new Object();
     options.id = 'next-update';
     options.no_animation = true;
-    clearos_add_sidebar_pair(lang_next_update, clearos_progress_bar(100, options));
+    if ($('#ns_settings_form').length == 0)
+        clearos_add_sidebar_pair(lang_next_update, clearos_progress_bar(100, options));
     get_mapped_devices();
     get_traffic_data();
     $('.nv-play-pause').on('click', function (e) {

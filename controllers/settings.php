@@ -74,7 +74,6 @@ class Settings extends ClearOS_Controller
         //---------------------
          
         $this->form_validation->set_policy('interval', 'network_visualiser/Network_Visualiser', 'validate_interval', FALSE);
-        $this->form_validation->set_policy('interface', 'network_visualiser/Network_Visualiser', 'validate_interface', TRUE);
         $this->form_validation->set_policy('display', 'network_visualiser/Network_Visualiser', 'validate_display', TRUE);
         $form_ok = $this->form_validation->run();
 
@@ -84,15 +83,10 @@ class Settings extends ClearOS_Controller
         if (($this->input->post('submit') && $form_ok)) {
             try {
                 $this->network_visualiser->set_interval($this->input->post('interval'));
-                $this->network_visualiser->set_interface($this->input->post('interface'));
                 $this->network_visualiser->set_display($this->input->post('display'));
-                $this->network_visualiser->set_report_type($this->input->post('report_type'));
                 $this->page->set_status_updated();
 
-                if ($this->input->post('report_type') == Network_Visualiser::REPORT_DETAILED)
-                    redirect('/network_visualiser/detailed');
-                else
-                    redirect('/network_visualiser');
+                redirect('/network_visualiser');
             } catch (Exception $e) {
                 $this->page->view_exception($e);
                 return;
@@ -103,14 +97,10 @@ class Settings extends ClearOS_Controller
         //---------------
 
         try {
-            $data['interface'] = $this->network_visualiser->get_interface();
             $data['interval'] = $this->network_visualiser->get_interval();
             $data['display'] = $this->network_visualiser->get_display();
-            $data['report_type'] = $this->network_visualiser->get_report_type();
             $data['interval_options'] = $this->network_visualiser->get_interval_options();
-            $data['interface_options'] = $this->network_visualiser->get_interface_options();
             $data['display_options'] = $this->network_visualiser->get_display_options();
-            $data['report_type_options'] = $this->network_visualiser->get_report_type_options();
         } catch (Exception $e) {
             $this->page->view_exception($e);
             return;

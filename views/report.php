@@ -16,8 +16,6 @@
 // Load dependencies
 ///////////////////////////////////////////////////////////////////////////////
 
-use \clearos\apps\network_visualiser\Network_Visualiser as Network_Visualiser;
-
 $this->lang->load('base');
 $this->lang->load('network');
 $this->lang->load('network_visualiser');

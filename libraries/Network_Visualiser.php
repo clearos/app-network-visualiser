@@ -100,7 +100,7 @@ class Network_Visualiser
 
     const CMD_JNETTOP = '/usr/bin/jnettop';
     const FILE_CONFIG = '/etc/clearos/network_visualiser.conf';
-    const FILE_DUMP = 'jnettop.dmp';
+    const FILE_DUMP = 'nv_scan';
     const REPORT_SIMPLE = 0;
     const REPORT_DETAILED = 1;
     const REPORT_GRAPHICAL = 2;
@@ -219,16 +219,17 @@ class Network_Visualiser
      *
      * @param string $interface a valid NIC interface
      * @param int    $interval  interval, in seconds
+     * @param array  $filters   array of filters
      *
      * @return void
      * @throws Validation_Exception, Engine_Exception
      */
 
-    function initialize($interface, $interval)
+    function initialize($interface, $interval, $filters)
     {
         clearos_profile(__METHOD__, __LINE__);
 
-        $file = new File(CLEAROS_TEMP_DIR . "/" . self::FILE_DUMP);
+        $file = new File(CLEAROS_TEMP_DIR . "/" . self::FILE_DUMP . "_" . md5($interface . $interval . serialize($filters)));
 
         if ($file->exists())
             $file->delete();
@@ -237,19 +238,11 @@ class Network_Visualiser
         $file->add_lines("timstamp=" . time() . "\n");
         $file->add_lines("interval=$interval\n");
         $file->add_lines("stop=" . strtotime("+$interval seconds") . "\n");
-        //sleep(1);
 
         $shell = new Shell();
-        $args = "-i $interface --display text -t $interval --format";
-        $fields = $this->get_fields();
-        $args .= " '";
+        $args = "-i $interface --display text -t $interval --format '$" . implode("$,$", $this->get_fields()) . "$'";
 
-        foreach ($fields as $field)
-            $args .= "\$" . $field . "\$,"; 
-
-        // Strip off the last comma separator and replace with single quote
-        $args = preg_replace("/,$/", "'", $args);
-        $options = array('env' => "LANG=en_US", 'background' => TRUE, 'log' => self::FILE_DUMP);
+        $options = array('env' => "LANG=en_US", 'background' => TRUE, 'log' => basename($file->get_filename()));
         $retval = $shell->execute(self::CMD_JNETTOP, $args, TRUE, $options);
 
         if ($retval != 0) {
@@ -257,9 +250,8 @@ class Network_Visualiser
             throw new Engine_Exception($errstr, CLEAROS_ERROR);
         } else {
             $lines = $shell->get_output();
-            foreach ($lines as $line) {
+            foreach ($lines as $line)
                 echo $line;
-            }
         }
     }
 
@@ -346,11 +338,15 @@ class Network_Visualiser
         clearos_profile(__METHOD__, __LINE__);
 
         $options = array(
-            5 => 5,
-            10 => 10,
-            15 => 15,
-            30 => 30,
-            60 => 60
+            5 => 5 . ' ' . strtolower(lang('base_seconds')),
+            10 => 10 . ' ' . strtolower(lang('base_seconds')),
+            15 => 15 . ' ' . strtolower(lang('base_seconds')),
+            30 => 30 . ' ' . strtolower(lang('base_seconds')),
+            60 => 60 . ' ' . strtolower(lang('base_minute')),
+            300 => 5 . ' ' . strtolower(lang('base_minutes')),
+            600 => 10 . ' ' . strtolower(lang('base_minutes')),
+            1800 => 30 . ' ' . strtolower(lang('base_minutes')),
+            3600 => 1 . ' ' . strtolower(lang('base_hour'))
         );
         return $options;
     }
@@ -375,15 +371,15 @@ class Network_Visualiser
 
         foreach ($network_interfaces as $interface => $details) {
             if ($details['role'] == Iface_Manager::EXTERNAL_ROLE) {
-                $options['pie'][$interface . '-up'] = array (
-                    'interface' => $interface,
-                    'direction' => 'up',
-                    'title' => $interface . ' - WAN Upload'
-                );
                 $options['pie'][$interface . '-dn'] = array (
                     'interface' => $interface,
                     'direction' => 'dn',
                     'title' => $interface . ' - WAN Download'
+                );
+                $options['pie'][$interface . '-up'] = array (
+                    'interface' => $interface,
+                    'direction' => 'up',
+                    'title' => $interface . ' - WAN Upload'
                 );
             } else {
                 $options['pie'][$interface] = array (
@@ -393,16 +389,19 @@ class Network_Visualiser
             }
         }
 
-        // TODO Translate
         if (clearos_library_installed('content_filter/Dans_Guardian')) {
             clearos_load_library('content_filter/Dans_Guardian');
+            clearos_load_language('content_filter');
             $dg = new Dans_Guardian();
-            $options['pie']['content_filter'] = "Content Filter";
+            $options['pie']['proxy'] = array(
+                'title' => lang('content_filter_content_filter')
+            );
         } else if (clearos_library_installed('web_proxy/Squid')) {
             clearos_load_library('web_proxy/Squid');
+            clearos_load_language('web_proxy');
             $squid = new Squid();
             $options['pie']['proxy'] = array(
-                'title' => 'Web Proxy'
+                'title' => lang('web_proxy_web_proxy')
             );
         }
         
@@ -607,7 +606,7 @@ class Network_Visualiser
     {
         clearos_profile(__METHOD__, __LINE__);
 
-        if (is_nan($interval) || $interval < 5 ||  $interval > 300)
+        if (is_nan($interval) || $interval < 5 ||  $interval > 3600)
             return lang('network_visualiser_interval_is_invalid');
     }
 

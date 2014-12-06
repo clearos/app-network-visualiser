@@ -37,13 +37,11 @@ $this->lang->load('base');
 $this->lang->load('network');
 $this->lang->load('network_visualiser');
 
-return;
-
 ///////////////////////////////////////////////////////////////////////////////
 // Form open
 ///////////////////////////////////////////////////////////////////////////////
 
-echo form_open('network_visualiser/settings');
+echo form_open('network_visualiser/settings', array('id' => 'ns_settings_form'));
 echo form_header(lang('base_settings'));
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -53,12 +51,11 @@ echo form_header(lang('base_settings'));
 $read_only = FALSE;
 $buttons = array(
     form_submit_update('submit'),
+    anchor_cancel('/app/network_visualiser')
 );
 
 echo field_dropdown('interval', $interval_options, $interval, lang('network_visualiser_interval'), $read_only);
-echo field_dropdown('interface', $interface_options, $interface, lang('network_interface'), $read_only);
 echo field_dropdown('display', $display_options, $display, lang('network_visualiser_display'), $read_only);
-echo field_dropdown('report_type', $report_type_options, $report_type, lang('network_visualiser_report'), $read_only);
 echo field_button_set($buttons);
 
 ///////////////////////////////////////////////////////////////////////////////
