@@ -60,10 +60,8 @@ $(document).ready(function() {
     var options = new Object();
     options.id = 'next-update';
     options.no_animation = true;
-    if ($('#ns_settings_form').length == 0)
-        clearos_add_sidebar_pair(lang_next_update, clearos_progress_bar(100, options));
     get_mapped_devices();
-    get_traffic_data();
+    get_data();
     $('.nv-play-pause').on('click', function (e) {
         e.preventDefault();
         if ($('#' + this.id + ' i').hasClass('fa-pause')) {
@@ -88,80 +86,57 @@ function get_mapped_devices() {
     });
 }
 
-function get_traffic_data() {
+function get_data() {
+    // Get distinct list of filenames from chart containers
+    var log_files = [];
+    $('.theme-chart-container').each(function (index) {
+        if ($.inArray($(this).data('filename'), log_files) === -1) 
+            log_files.push($(this).data('filename'));
+    });
     $.ajax({
-        type: 'GET',
+        type: 'POST',
         dataType: 'json',
-        url: '/app/network_visualiser/ajax/get_traffic_data',
+        data: 'ci_csrf_token=' + $.cookie('ci_csrf_token') + '&log_files=' + JSON.stringify(log_files),
+        url: '/app/network_visualiser/ajax/get_data',
         success: function(json) {
-            if (json.code != 0) {
-                setTimeout('get_traffic_data()', 900);
-                return;
-            }
-            if (json.timestamp > json.stop) {
-                pie_graph_data(json);
-                clearos_set_progress_bar('next-update', 100); 
-                reset_scan();
-            } else {
-                clearos_set_progress_bar('next-update', json.next_update); 
-            }
-            setTimeout('get_traffic_data()', 900);
-            return;
-/*
-            table_report.fnClearTable();
-            for (var index = 0 ; index < json.data.length; index++) {
-                if (display == 'totalbps') {
-                    if (isNaN(json.data[index].totalbps) || json.data[index].totalbps == 0)
-                            continue;
-                    field = '<span title="' + json.data[index].totalbps + '"></span>' + format_number(json.data[index].totalbps);
-                } else {
-                    if (isNaN(json.data[index].totalbytes) || json.data[index].totalbytes == 0)
-                        continue;
-                    field = '<span title="' + json.data[index].totalbytes + '"></span>' + format_number(json.data[index].totalbytes);
+            console.log(json);
+            var reset_ids = [];
+            // Pie Graphs
+            $('.nv-pie-chart').each(function() {
+                graphd = json[$(this).data('filename')];
+                if (graphd.code != 0 && graphd.timestamp <= graphd.stop) {
+                    clearos_set_progress_bar('progress-' + this.id, graphd.next_update); 
+                } else if (graphd.code == 0) {
+                    clearos_set_progress_bar('progress-' + this.id, 0); 
+                    update_pie_graph(this.id, graphd.data);
+                    reset_ids.push(this.id);
                 }
-                if ($('#report_type').val() == report_simple) {
-    	    		table_report.fnAddData([
-    	    		    json.data[index].src,
-    	    		    json.data[index].srcport,
-    	    		    json.data[index].dst,
-    	    		    field
-    	    		]);
-    	    	} else if ($('#report_type').val() == report_detailed) {
-    	    		table_report.fnAddData([
-    			        json.data[index].src,
-    			        json.data[index].srcport,
-    	                json.data[index].proto,
-    	    		    json.data[index].dst,
-    	                json.data[index].dstport,
-    	    		    field
-    	    		]);
-                }
-            }
-
-            table_report.fnAdjustColumnSizing();
-*/
+            }); 
+            setTimeout('get_data()', 900);
+            if (reset_ids.length > 0)
+                reset_scan(reset_ids);
         },
         error: function(xhr, text, err) {
         }
     });
 }
 
-function reset_scan() {
+function reset_scan(reset_ids) {
     $.ajax({
         type: 'POST',
         dataType: 'json',
-        data: 'ci_csrf_token=' + $.cookie('ci_csrf_token'),
+        data: 'ci_csrf_token=' + $.cookie('ci_csrf_token') + '&ids=' + JSON.stringify(reset_ids),
         url: '/app/network_visualiser/ajax/reset_scan',
         success: function(json) {
             if (json.code != 0) {
                 alert(json.errmsg);
                 return;
             }
+            $.each(reset_ids, function(index, id) {
+                clearos_set_progress_bar('progress-' + id, 100); 
+            });
         },
         error: function(xhr, text, err) {
-            // Don't display any errors if ajax request was aborted due to page redirect/reload
-            if (xhr['abort'] == undefined)
-                alert(xhr.responseText.toString());
         }
     });
 }
@@ -188,49 +163,36 @@ function format_number (bytes) {
     return ((i == 0)? (bits / Math.pow(1024, i)) : (bits / Math.pow(1024, i)).toFixed(1)) + ' ' + sizes[i];
 };
 
-function pie_graph_data(json) {
+function update_pie_graph(id, chart_data) {
     var datapoints = new Array();
-    $('.nv-pie-chart').each(function() {
-        if ($('#' + this.id + '-play i').hasClass('fa-pause')) {
-            // Don't update graph...paused
-            return;
-        }
-        chart_data = json.data[this.id];
-        for (var index = 0 ; index < chart_data.length; index++) {
-            if (display == 'totalbps')
-                total = chart_data[index].totalbps; 
-            else
-                total = chart_data[index].totalbytes; 
-            if (total == undefined || isNaN(total) || total == 0)
-                continue;
-            if (!(chart_data[index].src in mapping)) {
-                if (datapoints[chart_data[index].src] == undefined)
-                    datapoints[chart_data[index].src] = parseInt(total);
-                else 
-                    datapoints[chart_data[index].src] += parseInt(total);
-            } else {
-                if (datapoints[mapping[chart_data[index].src].nickname] == undefined)
-                    datapoints[mapping[chart_data[index].src].nickname] = parseInt(total);
-                else 
-                    datapoints[mapping[chart_data[index].src].nickname] += parseInt(total);
-            }
 
-        }
-        var data = new Array();
-        counter = 0;
-        for (entry in datapoints) {
-            data[counter] = [entry,datapoints[entry]]; 
-            if (counter >= 9)
-                break;
-            counter++;
+    if ($('#' + id + '-play i').hasClass('fa-pause')) {
+        // Don't update graph...paused
+        return;
+    }
+
+    for (var index = 0 ; index < chart_data.length; index++) {
+        if (display == 'totalbps')
+            total = chart_data[index].totalbps; 
+        else
+            total = chart_data[index].totalbytes; 
+        if (total == undefined || isNaN(total) || total == 0)
+            continue;
+        if (!(chart_data[index].src in mapping)) {
+            if (datapoints[chart_data[index].src] == undefined)
+                datapoints[chart_data[index].src] = parseInt(total);
+            else 
+                datapoints[chart_data[index].src] += parseInt(total);
+        } else {
+            if (datapoints[mapping[chart_data[index].src].nickname] == undefined)
+                datapoints[mapping[chart_data[index].src].nickname] = parseInt(total);
+            else 
+                datapoints[mapping[chart_data[index].src].nickname] += parseInt(total);
         }
 
-        var options = new Object;
-        clearos_pie_chart(this.id, data, options);
-        clearos_loaded(this.id + '-container');
-    });
-/*
+    }
 
+    var data = new Array();
     counter = 0;
     for (entry in datapoints) {
         data[counter] = [entry,datapoints[entry]]; 
@@ -240,9 +202,8 @@ function pie_graph_data(json) {
     }
 
     var options = new Object;
-    clearos_pie_chart('nv-top-ten', data, options);
-    clearos_loaded('nv-top-ten-container');
-*/
+    clearos_pie_chart(id, data, options);
+    clearos_loaded(id + '-container');
 }
 
 <?php

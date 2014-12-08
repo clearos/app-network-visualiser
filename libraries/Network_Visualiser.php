@@ -99,8 +99,10 @@ class Network_Visualiser
     ///////////////////////////////////////////////////////////////////////////////
 
     const CMD_JNETTOP = '/usr/bin/jnettop';
+    const CMD_NV_SCAN = '/usr/sbin/nv_scan';
     const FILE_CONFIG = '/etc/clearos/network_visualiser.conf';
-    const FILE_DUMP = 'nv_scan';
+    const FILE_PREFIX = 'nv_';
+    const FILE_LOG = 'nv_logfile';
     const REPORT_SIMPLE = 0;
     const REPORT_DETAILED = 1;
     const REPORT_GRAPHICAL = 2;
@@ -215,44 +217,54 @@ class Network_Visualiser
     }
 
     /**
-     * Executes a test to see if mail can be sent through the SMTP server.
+     * Starts a scan.
      *
-     * @param string $interface a valid NIC interface
-     * @param int    $interval  interval, in seconds
-     * @param array  $filters   array of filters
+     * @param string  $interface  a valid NIC interface
+     * @param int     $interval   interval, in seconds
+     * @param array   $filters    array of filters
+     * @param boolean $force      force start of new scan (not recommended)
      *
-     * @return void
+     * @return string filename where out output data is stored
      * @throws Validation_Exception, Engine_Exception
      */
 
-    function initialize($interface, $interval, $filters)
+    function start_scan($interface, $interval, $filters, $force = FALSE)
     {
-        clearos_profile(__METHOD__, __LINE__);
+        clearos_profile(__METHOD__, __LINE__, "TODO start_scan");
 
-        $file = new File(CLEAROS_TEMP_DIR . "/" . self::FILE_DUMP . "_" . md5($interface . $interval . serialize($filters)));
-
-        if ($file->exists())
-            $file->delete();
-
-        $file->create('webconfig', 'webconfig', '0644');
-        $file->add_lines("timstamp=" . time() . "\n");
-        $file->add_lines("interval=$interval\n");
-        $file->add_lines("stop=" . strtotime("+$interval seconds") . "\n");
+        $log_file = $this->get_log_file($interface, $interval, $filters);
 
         $shell = new Shell();
-        $args = "-i $interface --display text -t $interval --format '$" . implode("$,$", $this->get_fields()) . "$'";
+        $args = "-i$interface -t$interval -f$log_file";
+        foreach ($filters as $filter) 
+            $args.= " -x$filter";
 
-        $options = array('env' => "LANG=en_US", 'background' => TRUE, 'log' => basename($file->get_filename()));
-        $retval = $shell->execute(self::CMD_JNETTOP, $args, TRUE, $options);
+        $options = array('background' => TRUE);
+        $retval = $shell->execute(self::CMD_NV_SCAN, $args, TRUE, $options);
 
         if ($retval != 0) {
             $errstr = $shell->get_last_output_line();
             throw new Engine_Exception($errstr, CLEAROS_ERROR);
-        } else {
-            $lines = $shell->get_output();
-            foreach ($lines as $line)
-                echo $line;
         }
+        return $log_file;
+    }
+
+    /**
+     * Get log file name.
+     *
+     * @param string  $interface   a valid NIC interface
+     * @param int     $interval    interval, in seconds
+     * @param array   $filters     array of filters
+     *
+     * @return string log file where out output data is stored
+     * @throws Validation_Exception, Engine_Exception
+     */
+
+    function get_log_file($interface, $interval, $filters)
+    {
+        clearos_profile(__METHOD__, __LINE__);
+
+        return self::FILE_PREFIX . md5($interface . $interval . serialize($filters));
     }
 
     /**
@@ -342,13 +354,44 @@ class Network_Visualiser
             10 => 10 . ' ' . strtolower(lang('base_seconds')),
             15 => 15 . ' ' . strtolower(lang('base_seconds')),
             30 => 30 . ' ' . strtolower(lang('base_seconds')),
-            60 => 60 . ' ' . strtolower(lang('base_minute')),
+            60 => 1 . ' ' . strtolower(lang('base_minute')),
             300 => 5 . ' ' . strtolower(lang('base_minutes')),
-            600 => 10 . ' ' . strtolower(lang('base_minutes')),
-            1800 => 30 . ' ' . strtolower(lang('base_minutes')),
-            3600 => 1 . ' ' . strtolower(lang('base_hour'))
+            600 => 10 . ' ' . strtolower(lang('base_minutes'))
         );
         return $options;
+    }
+
+    /**
+     * Resets scan to start again.
+     *
+     * @return array
+     */
+
+    function reset_scan($ids)
+    {
+        clearos_profile(__METHOD__, __LINE__);
+        $graph_options = $this->get_graph_options();
+        $log_files = array();
+        foreach ($ids as $id) {
+            // ids come back as array with the first substring determine the type (pie, line etc)
+            list($type, $graph_id) = preg_split('/-/', $id, 2);
+            $meta = $graph_options[$type][$graph_id];
+            $log_file = $this->get_log_file(
+                $meta['interface'],
+                $meta['interval'],
+                $meta['filters']
+            );
+            if (in_array($log_file, $log_files)) {
+                continue;
+            }
+
+            $log_file = $this->start_scan(
+                $meta['interface'],
+                $meta['interval'],
+                $meta['filters']
+            );
+            array_push($log_files, $log_file);
+        }
     }
 
     /**
@@ -373,37 +416,52 @@ class Network_Visualiser
             if ($details['role'] == Iface_Manager::EXTERNAL_ROLE) {
                 $options['pie'][$interface . '-dn'] = array (
                     'interface' => $interface,
+                    'interval' => $this->get_interval(),
                     'direction' => 'dn',
+                    'filters' => NULL,
                     'title' => $interface . ' - WAN Download'
                 );
+                // Upload can share the same log file as download...just parse the fields
+                // according to direction
                 $options['pie'][$interface . '-up'] = array (
                     'interface' => $interface,
+                    'interval' => $this->get_interval(),
                     'direction' => 'up',
+                    'filters' => NULL,
                     'title' => $interface . ' - WAN Upload'
                 );
+
+                // Check for proxy/filter
+                if (clearos_library_installed('content_filter/Dans_Guardian')) {
+                    clearos_load_library('content_filter/Dans_Guardian');
+                    clearos_load_language('content_filter');
+                    $dg = new Dans_Guardian();
+                    $options['pie'][$interface . '-filter'] = array(
+                        'interface' => $interface,
+                        'interval' => $this->get_interval(),
+                        'filters' => NULL,
+                        'title' => lang('content_filter_content_filter')
+                    );
+                } else if (clearos_library_installed('web_proxy/Squid')) {
+                    clearos_load_library('web_proxy/Squid');
+                    clearos_load_language('web_proxy');
+                    $squid = new Squid();
+                    $options['pie'][$interface . '-proxy'] = array(
+                        'interface' => $interface,
+                        'interval' => $this->get_interval(),
+                        'filters' => NULL,
+                        'title' => lang('web_proxy_web_proxy')
+                    );
+                }
             } else {
                 $options['pie'][$interface] = array (
                     'interface' => $interface,
+                    'interval' => $this->get_interval(),
                     'title' => 'LAN Traffic'
                 );
             }
         }
 
-        if (clearos_library_installed('content_filter/Dans_Guardian')) {
-            clearos_load_library('content_filter/Dans_Guardian');
-            clearos_load_language('content_filter');
-            $dg = new Dans_Guardian();
-            $options['pie']['proxy'] = array(
-                'title' => lang('content_filter_content_filter')
-            );
-        } else if (clearos_library_installed('web_proxy/Squid')) {
-            clearos_load_library('web_proxy/Squid');
-            clearos_load_language('web_proxy');
-            $squid = new Squid();
-            $options['pie']['proxy'] = array(
-                'title' => lang('web_proxy_web_proxy')
-            );
-        }
         
         return $options;
     }
@@ -465,84 +523,77 @@ class Network_Visualiser
     }
 
     /**
-     * Returns the visualiser data.
+     * Returns the network visualiser data.
+     * @param array $log_files log files to pull data from
      *
      * @return array
      */
 
-    function get_traffic_data()
+    function get_data($log_files)
     {
         clearos_profile(__METHOD__, __LINE__);
 
-        $file = new File(CLEAROS_TEMP_DIR . "/" . self::FILE_DUMP);
+        $mydata = array();
 
-        if (!$file->exists()) {
-            throw new Engine_Exception(lang('base_nothing_to_report'));
-            $file_as_array = array (
-                'code' => 1,
-                'errmsg' => lang('base_nothing_to_report')
-            );
-            return $file_as_array;
-        }
-
-        $timestamp = time();
-
+        // Fields are always the same...pull out of loop
         $fields = $this->get_fields();
+        foreach ($log_files as $filename) {
 
-        if (($handle = fopen(CLEAROS_TEMP_DIR . "/" . self::FILE_DUMP, "r")) !== FALSE) {
-            $line = 0;
-            $file_as_array = array();
-            while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
-                if (preg_match('/^Could not.*$/', $data[0]))
-                    continue;
-                if (preg_match('/^interval.*/', $data[0])) {
-                    $interval = preg_replace('/interval=/', '', $data[0]);
-                    continue;
-                } else if (preg_match('/^stop.*/', $data[0])) {
-                    $stop = preg_replace('/stop=/', '', $data[0]);
+            // First check in progress file
+            $file = new File(CLEAROS_TEMP_DIR . "/" . $filename . "_in_progress");
+
+            if (!$file->exists()) {
+                $file = new File(CLEAROS_TEMP_DIR . "/" . $filename);
+                if (!$file->exists()) {
+                    $mydata[$filename] = array(
+                        'code' => 1,
+                        'errmsg' => lang('base_nothing_to_report')
+                    );
                     continue;
                 }
-                $index = 0;
-                foreach ($fields as $field) {
-                    if (in_array($field, $this->int_fields))
-                        $typed_data = (int) $data[$index];
-                    else
-                        $typed_data = $data[$index];
-
-                    $file_as_array[$line][$field] = $typed_data;
-                    $index++;
-                }
-                $line++;
             }
-            fclose($handle);
-        }
 
-        $timestamp = time();
-        if (empty($file_as_array)) {
-            $file_as_array = array (
-                'code' => 1,
+            $timestamp = time();
+
+            if (($handle = fopen(CLEAROS_TEMP_DIR . "/" . basename($file->get_filename()), "r")) !== FALSE) {
+                $line = 0;
+                $log_file_content = array();
+                while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
+                    if (preg_match('/^Could not.*$/', $data[0])) {
+                        continue;
+                    } else if (preg_match('/^interval.*/', $data[0])) {
+                        $interval = preg_replace('/interval=/', '', $data[0]);
+                        continue;
+                    } else if (preg_match('/^stop.*/', $data[0])) {
+                        $stop = preg_replace('/stop=/', '', $data[0]);
+                        continue;
+                    }
+                    $index = 0;
+                    foreach ($fields as $field) {
+                        if (in_array($field, $this->int_fields))
+                            $typed_data = (int) $data[$index];
+                        else
+                            $typed_data = $data[$index];
+
+                        $log_file_content[$line][$field] = $typed_data;
+                        $index++;
+                    }
+                    $line++;
+                }
+                fclose($handle);
+            }
+
+            $mydata[$filename] = array(
                 'timestamp' => $timestamp,
                 'stop' => $stop,
                 'next_update' => ($stop - $timestamp) / $interval * 100,
-                'errmsg' => lang('base_nothing_to_report')
+                'code' => (empty($log_file_content) ? 1 : 0),
+                'errmsg' => (empty($log_file_content) ? lang('base_nothing_to_report') : ''),
+                'data' => $log_file_content
             );
-            return $file_as_array;
         }
-    
-        // Pie
-        $options = $this->get_graph_options();
-        foreach ($options['pie'] as $id => $pie) {
-            $chart_data["pie-$id"] = $file_as_array;
-        }
-        $data = array(
-            'timestamp' => $timestamp,
-            'stop' => $stop,
-            'next_update' => ($stop - $timestamp) / $interval * 100,
-            'code' => 0,
-            'data' => $chart_data
-        );
-        
-        return $data;
+            
+        return $mydata;
     }
 
     ///////////////////////////////////////////////////////////////////////////////

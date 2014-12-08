@@ -40,7 +40,13 @@ $app['core_file_manifest'] = array(
         'target' => '/etc/jnettop.conf',
         'mode' => '0755',
         'config' => TRUE,
-        'config_params' => 'noreplace',
+        'config_params' => 'noreplace'
+    ),
+    'nv_scan' => array(
+        'target' => '/usr/sbin/nv_scan',
+        'mode' => '0755',
+        'owner' => 'root',
+        'group' => 'root'
     ),
 );
 

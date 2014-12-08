@@ -3,4 +3,4 @@
 # Add sudoers entries
 #--------------------
 
-/usr/sbin/addsudo /usr/bin/jnettop app-network-visualiser
+/usr/sbin/addsudo /usr/sbin/nv_scan app-network-visualiser

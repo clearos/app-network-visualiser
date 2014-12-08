@@ -73,7 +73,7 @@ class Ajax extends ClearOS_Controller
      * @return JSON
      */
 
-    function get_traffic_data()
+    function get_data()
     {
         clearos_profile(__METHOD__, __LINE__);
 
@@ -83,7 +83,8 @@ class Ajax extends ClearOS_Controller
 
             $this->load->library('network_visualiser/Network_Visualiser');
 
-            $data = $this->network_visualiser->get_traffic_data();
+            $data = $this->network_visualiser->get_data(json_decode($this->input->post('log_files')));
+
             echo json_encode($data);
 
         } catch (Exception $e) {
@@ -92,7 +93,7 @@ class Ajax extends ClearOS_Controller
     }
 
     /**
-     * Ajax reset controller
+     * Ajax reset scan controller
      *
      * @return json
      */
@@ -110,10 +111,7 @@ class Ajax extends ClearOS_Controller
         $this->load->library('network_visualiser/Network_Visualiser');
 
         try {
-            $this->network_visualiser->initialize(
-                $this->network_visualiser->get_interface(),
-                $this->network_visualiser->get_interval()
-            );
+            $this->network_visualiser->reset_scan(json_decode($this->input->post('ids')));
             echo json_encode(array('code' => 0));
         } catch (Exception $e) {
             echo json_encode(Array('code' => clearos_exception_code($e), 'errmsg' => clearos_exception_message($e)));

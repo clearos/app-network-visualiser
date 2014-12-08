@@ -40,8 +40,12 @@ clearos_load_language('network_visualiser');
 //--------
 
 use \clearos\apps\network_visualiser\Network_Visualiser as Network_Visualiser;
+use \clearos\apps\base\File as File;
+use \clearos\apps\base\Shell as Shell;
 
 clearos_load_library('network_visualiser/Network_Visualiser');
+clearos_load_library('base/File');
+clearos_load_library('base/Shell');
 
 // Exceptions
 //-----------
@@ -61,6 +65,9 @@ $short_options  = '';
 // Common
 $short_options .= 'i::'; // Interface
 $short_options .= 't::'; // Interval Time
+$short_options .= 'x::'; // Filters
+$short_options .= 'f::'; // Log file
+$short_options .= 'r::'; // Reset
 $short_options .= 'o::'; // Output
 $short_options .= 'h';   // Help
 
@@ -70,7 +77,9 @@ $helpopts  = '
 
   -i=interface (optional - default first online interface)
   -t=interval (optional - default 5 seconds)
-  -x=filter  (optional - default no filter - supports multiple filters: -x srcport=80 destip=192.168.0.1)
+  -x=filter  (optional - default no filter - supports multiple filters: -xsrcport=80 -xdestip=192.168.0.1)
+  -f=log file (optional - log file, default is nv_logfile)
+  -r=force reset (optional - reset log file output)
   -o=output (json [default] or stdout)
   -h: help
 
@@ -83,6 +92,9 @@ $options = getopt($short_options);
 
 $interface = isset($options['i']) ? $options['i'] : NULL;
 $interval = isset($options['t']) ? $options['t'] : 5;
+$filters = isset($options['x']) ? $options['x'] : NULL;
+$log_file = isset($options['f']) ? $options['f'] : NULL;
+$reset = isset($options['r']) ? $options['r'] : NULL;
 $output = isset($options['o']) ? $options['o'] : 'stdout';
 $help = isset($options['h']) ? TRUE : FALSE;
 
@@ -100,6 +112,9 @@ if (php_sapi_name() === 'cli') {
     }
 }
 
+if ($filters != NULL && !is_array($filters))
+    $filters = array($filters);
+
 $network_visualiser = new Network_Visualiser();
 
 try {
@@ -107,11 +122,39 @@ try {
         $interfaces = $network_visualiser->get_interface_options();
         $interface = key($interfaces);
     }
-    $network_visualiser->initialize(
-        $interface,
-        $interval,
-        $filters
-    );
+
+    if ($log_file == NULL)
+        $log_file = Network_Visualiser::FILE_LOG . "_in_progress";
+    else
+        $log_file = $log_file . "_in_progress";
+
+    $file = new File(CLEAROS_TEMP_DIR . "/" . $log_file);
+
+    if ($file->exists() && $reset) {
+        update_status(0, "Forcing reset of log file and starting new scan.");
+        $file->delete();
+    } elseif ($file->exists()) {
+        update_status(0, "Scan in progress...[" . $file->get_filename() . "]");
+        return;
+    }
+
+    $file->create('webconfig', 'webconfig', '0644');
+    $file->add_lines("interval=$interval\n");
+    $file->add_lines("stop=" . strtotime("+$interval seconds") . "\n");
+
+    $shell = new Shell();
+    $args = "-i $interface --display text -t $interval --format '$" . implode("$,$", $network_visualiser->get_fields()) . "$'";
+
+    $options = array('env' => "LANG=en_US", 'log' => basename($file->get_filename()));
+
+    $retval = $shell->execute(Network_Visualiser::CMD_JNETTOP, $args, TRUE, $options);
+
+    if ($retval != 0) {
+        $errstr = $shell->get_last_output_line();
+        throw new Engine_Exception($errstr, CLEAROS_ERROR);
+    }
+    $file->move_to(CLEAROS_TEMP_DIR . "/" . preg_replace("/_in_progress/", "", $log_file));
+    echo "Done FIXME\n";
 } catch (Exception $e) {
     update_status(-1, clearos_exception_message($e));
 }
@@ -120,7 +163,6 @@ try {
  * Update status.
  *
  * @param string $code     status code
- * @param string $progress progress
  * @param string $msg      status message
  *
  * @return void

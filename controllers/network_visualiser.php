@@ -69,11 +69,6 @@ class Network_Visualiser extends ClearOS_Controller
         $this->load->library('network_visualiser/Network_Visualiser');
         $this->lang->load('network_visualiser');
 
-        $this->network_visualiser->initialize(
-            $this->network_visualiser->get_interface(),
-            $this->network_visualiser->get_interval()
-        );
-
         // Add setting link to breadcrumb trail
         $breadcrumb_links = array(
             'settings' => array('url' => '/app/network_visualiser/settings', 'tag' => lang('base_settings'))
@@ -83,6 +78,30 @@ class Network_Visualiser extends ClearOS_Controller
         //-----------
 
         $data['graph_options'] = $this->network_visualiser->get_graph_options();
+
+        $log_files = array();
+        // Array for log files is lame....but it fixes a race
+        // condition forking off too many nv_scan processes
+        // for scans that can use the same log file
+        foreach($data['graph_options']['pie'] as $id => $meta) {
+            $log_file = $this->network_visualiser->get_log_file(
+                $meta['interface'],
+                $meta['interval'],
+                $meta['filters']
+            );
+            if (in_array($log_file, $log_files)) {
+                $data['graph_options']['pie'][$id]['filename'] = $log_file;
+                continue;
+            }
+            // OK..we need to start a scan for these parameters
+            $log_file = $this->network_visualiser->start_scan(
+                $meta['interface'],
+                $meta['interval'],
+                $meta['filters']
+            );
+            $data['graph_options']['pie'][$id]['filename'] = $log_file;
+            array_push($log_files, $log_file);
+        }
 
         $this->page->view_form(
             'network_visualiser/report',
