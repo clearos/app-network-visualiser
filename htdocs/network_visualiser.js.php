@@ -99,7 +99,6 @@ function get_data() {
         data: 'ci_csrf_token=' + $.cookie('ci_csrf_token') + '&log_files=' + JSON.stringify(log_files),
         url: '/app/network_visualiser/ajax/get_data',
         success: function(json) {
-            console.log(json);
             var reset_ids = [];
             // Pie Graphs
             $('.nv-pie-chart').each(function() {
@@ -171,7 +170,10 @@ function update_pie_graph(id, chart_data) {
         return;
     }
 
+    // Loop through all data and group by IP.
     for (var index = 0 ; index < chart_data.length; index++) {
+        if (index == 0)
+            console.log(chart_data[index]);
         if (display == 'totalbps')
             total = chart_data[index].totalbps; 
         else

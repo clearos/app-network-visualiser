@@ -36,8 +36,8 @@ $app['core_requires'] = array(
 );
 
 $app['core_file_manifest'] = array(
-    'jnettop.conf' => array(
-        'target' => '/etc/jnettop.conf',
+    'nework_visualiser.conf' => array(
+        'target' => '/etc/clearos/network_visualiser.conf',
         'mode' => '0755',
         'config' => TRUE,
         'config_params' => 'noreplace'
