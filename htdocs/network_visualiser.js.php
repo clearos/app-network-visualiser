@@ -173,9 +173,9 @@ function update_pie_graph(id, chart_data) {
     display = 'totalbps';
 
     var type = 'up';
-    if (id.matches('-dn'))
+    if (id.match('-dn'))
         type = 'down';
-    else if (id.matches('-proxy'))
+    else if (id.match('-proxy'))
         type = 'proxy';
     // Loop through all data and group by IP.
     for (var index = 0 ; index < chart_data.length; index++) {
