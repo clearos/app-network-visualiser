@@ -133,9 +133,22 @@ try {
     if ($file->exists() && $reset) {
         update_status(0, "Forcing reset of log file and starting new scan.");
         $file->delete();
-    } elseif ($file->exists()) {
-        update_status(0, "Scan in progress...[" . $file->get_filename() . "]");
-        return;
+    }
+
+    if ($file->exists()) {
+        // Check if there are any other scripts running...if not, clean up
+        $shell = new Shell();
+        $log_options = array('validate_exit_code' => FALSE);
+        $args = "afxw | grep " . $file->get_filename() . " | grep -v ' grep '";
+        $retval = $shell->execute(Network_Visualiser::CMD_PS, $args, FALSE, $log_options);
+
+        if ($retval) {
+            update_status(0, "Cleaning up abandoned log file.");
+            $file->delete();
+        } else {
+            update_status(0, "Scan in progress...[" . $file->get_filename() . "]");
+            return;
+        }
     }
 
     $file->create('webconfig', 'webconfig', '0644');
@@ -153,8 +166,10 @@ try {
         $errstr = $shell->get_last_output_line();
         throw new Engine_Exception($errstr, CLEAROS_ERROR);
     }
+    $contents = $file->get_contents_as_array();
     $file->move_to(CLEAROS_TEMP_DIR . "/" . preg_replace("/_in_progress/", "", $log_file));
-    echo "Done FIXME\n";
+    print_r($contents);
+    echo "Complete.\n";
 } catch (Exception $e) {
     update_status(-1, clearos_exception_message($e));
 }

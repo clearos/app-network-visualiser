@@ -100,6 +100,7 @@ class Network_Visualiser
 
     const CMD_JNETTOP = '/usr/bin/jnettop';
     const CMD_NV_SCAN = '/usr/sbin/nv_scan';
+    const CMD_PS = '/bin/ps';
     const FILE_CONFIG = '/etc/clearos/network_visualiser.conf';
     const FILE_PREFIX = 'nv_';
     const FILE_LOG = 'nv_logfile';

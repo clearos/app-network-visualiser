@@ -170,6 +170,13 @@ function update_pie_graph(id, chart_data) {
         return;
     }
 
+    display = 'totalbps';
+
+    var type = 'up';
+    if (id.matches('-dn'))
+        type = 'down';
+    else if (id.matches('-proxy'))
+        type = 'proxy';
     // Loop through all data and group by IP.
     for (var index = 0 ; index < chart_data.length; index++) {
         if (index == 0)
