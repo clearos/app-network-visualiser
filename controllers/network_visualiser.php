@@ -83,14 +83,9 @@ class Network_Visualiser extends ClearOS_Controller
         // Array for log files is lame....but it fixes a race
         // condition forking off too many nv_scan processes
         // for scans that can use the same log file
-        foreach($data['graph_options']['pie'] as $id => $meta) {
-            $log_file = $this->network_visualiser->get_log_file(
-                $meta['interface'],
-                $meta['interval'],
-                $meta['filters']
-            );
-            if (in_array($log_file, $log_files)) {
-                $data['graph_options']['pie'][$id]['filename'] = $log_file;
+        foreach($data['graph_options'] as $id => $meta) {
+            if (in_array($meta['log_file'], $log_files)) {
+                $data['graph_options'][$id]['filename'] = $log_file;
                 continue;
             }
             // OK..we need to start a scan for these parameters
@@ -99,8 +94,8 @@ class Network_Visualiser extends ClearOS_Controller
                 $meta['interval'],
                 $meta['filters']
             );
-            $data['graph_options']['pie'][$id]['filename'] = $log_file;
-            array_push($log_files, $log_file);
+            $data['graph_options'][$id]['filename'] = $log_file;
+            array_push($log_files, $meta['log_file']);
         }
 
         $this->page->view_form(

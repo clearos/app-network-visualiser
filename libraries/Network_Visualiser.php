@@ -110,7 +110,7 @@ class Network_Visualiser
 
     protected $config = NULL;
     protected $is_loaded = FALSE;
-    protected $int_fields = array();
+    protected $byte_fields = array();
 
     ///////////////////////////////////////////////////////////////////////////////
     // M E T H O D S
@@ -122,7 +122,7 @@ class Network_Visualiser
 
     function __construct()
     {
-        $this->int_fields = array('srcport', 'dstport', 'totalbps', 'totalbytes');
+        $this->byte_fields = array('totalbps', 'totalbytes', 'srcbps', 'dstbps', 'srcbytes', 'dstbytes');
     }
 
     /** Send a plain text message.
@@ -215,6 +215,28 @@ class Network_Visualiser
             $this->_load_config();
 
         return $this->config['report'];
+    }
+
+    /**
+     * Get maximum limits for interface.
+     *
+     * @param string  $interface  a valid NIC interface
+     *
+     * @return array
+     */
+
+    function get_max_limits($interface)
+    {
+        clearos_profile(__METHOD__, __LINE__);
+
+        if (!$this->is_loaded)
+            $this->_load_config();
+
+        $limits = array();
+        $param = $this->config[$interface . '-max-limits'];
+        if (preg_match("/(\d+)\|(\d+)/", $param, $match))
+            $limits = array('upload' => $match[1], 'download' => $match[2]);
+        return $limits;
     }
 
     /**
@@ -374,15 +396,8 @@ class Network_Visualiser
         $graph_options = $this->get_graph_options();
         $log_files = array();
         foreach ($ids as $id) {
-            // ids come back as array with the first substring determine the type (pie, line etc)
-            list($type, $graph_id) = preg_split('/-/', $id, 2);
-            $meta = $graph_options[$type][$graph_id];
-            $log_file = $this->get_log_file(
-                $meta['interface'],
-                $meta['interval'],
-                $meta['filters']
-            );
-            if (in_array($log_file, $log_files)) {
+            $meta = $graph_options[$id];
+            if (in_array($meta['log_file'], $log_files)) {
                 continue;
             }
 
@@ -391,7 +406,7 @@ class Network_Visualiser
                 $meta['interval'],
                 $meta['filters']
             );
-            array_push($log_files, $log_file);
+            array_push($log_files, $meta['log_file']);
         }
     }
 
@@ -415,49 +430,89 @@ class Network_Visualiser
 
         foreach ($network_interfaces as $interface => $details) {
             if ($details['role'] == Iface_Manager::EXTERNAL_ROLE) {
-                $options['pie'][$interface . '-dn'] = array (
+
+                $limits = $this->get_max_limits($interface); 
+
+                if (!empty($limits)) {
+                    $options[$interface . '-usage-up'] = array (
+                        'interface' => $interface,
+                        'interval' => $this->get_interval(),
+                        'type' => 'usage',
+                        'chart' => 'pie',
+                        'direction' => 'up',
+                        'filters' => NULL,
+                        'log_file' => $this->get_log_file($interface, $this->get_interval(), NULL),
+                        'options' => array('hole' => TRUE, 'legend' => FALSE, 'max' => (int)$limits['upload']),
+                        'title' => $interface . ' - Total Upload Usage'
+                    );
+                    $options[$interface . '-usage-dn'] = array (
+                        'interface' => $interface,
+                        'interval' => $this->get_interval(),
+                        'type' => 'usage',
+                        'chart' => 'pie',
+                        'direction' => 'dn',
+                        'filters' => NULL,
+                        'log_file' => $this->get_log_file($interface, $this->get_interval(), NULL),
+                        'options' => array('hole' => TRUE, 'legend' => FALSE, 'max' => (int)$limits['download']),
+                        'title' => $interface . ' - Total Download Usage'
+                    );
+                }
+
+                $options[$interface . '-dn'] = array (
                     'interface' => $interface,
                     'interval' => $this->get_interval(),
+                    'type' => 'tracking',
+                    'chart' => 'pie',
                     'direction' => 'dn',
                     'filters' => NULL,
+                    'log_file' => $this->get_log_file($interface, $this->get_interval(), NULL),
                     'title' => $interface . ' - WAN Download'
                 );
                 // Upload can share the same log file as download...just parse the fields
                 // according to direction
-                $options['pie'][$interface . '-up'] = array (
+                $options[$interface . '-up'] = array (
                     'interface' => $interface,
                     'interval' => $this->get_interval(),
+                    'type' => 'tracking',
+                    'chart' => 'pie',
                     'direction' => 'up',
                     'filters' => NULL,
+                    'log_file' => $this->get_log_file($interface, $this->get_interval(), NULL),
                     'title' => $interface . ' - WAN Upload'
                 );
+
 
                 // Check for proxy/filter
                 if (clearos_library_installed('content_filter/Dans_Guardian')) {
                     clearos_load_library('content_filter/Dans_Guardian');
                     clearos_load_language('content_filter');
                     $dg = new Dans_Guardian();
-                    $options['pie'][$interface . '-filter'] = array(
+                    $options[$interface . '-filter'] = array(
                         'interface' => $interface,
                         'interval' => $this->get_interval(),
                         'filters' => NULL,
+                        'log_file' => $this->get_log_file($interface, $this->get_interval(), NULL),
+                        'chart' => 'pie',
                         'title' => lang('content_filter_content_filter')
                     );
                 } else if (clearos_library_installed('web_proxy/Squid')) {
                     clearos_load_library('web_proxy/Squid');
                     clearos_load_language('web_proxy');
                     $squid = new Squid();
-                    $options['pie'][$interface . '-proxy'] = array(
+                    $options[$interface . '-proxy'] = array(
                         'interface' => $interface,
                         'interval' => $this->get_interval(),
                         'filters' => NULL,
+                        'log_file' => $this->get_log_file($interface, $this->get_interval(), NULL),
+                        'chart' => 'pie',
                         'title' => lang('web_proxy_web_proxy')
                     );
                 }
             } else {
-                $options['pie'][$interface] = array (
+                $options[$interface] = array (
                     'interface' => $interface,
-                    'interval' => $this->get_interval(),
+                    'interval' => $this->get_get_interval(),
+                    'chart' => 'pie',
                     'title' => 'LAN Traffic'
                 );
             }
@@ -571,8 +626,8 @@ class Network_Visualiser
                     }
                     $index = 0;
                     foreach ($fields as $field) {
-                        if (in_array($field, $this->int_fields))
-                            $typed_data = (int) $data[$index];
+                        if (in_array($field, $this->byte_fields))
+                            $typed_data = (int) $data[$index] * 8;
                         else
                             $typed_data = $data[$index];
 

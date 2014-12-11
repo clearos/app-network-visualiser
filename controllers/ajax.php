@@ -93,6 +93,31 @@ class Ajax extends ClearOS_Controller
     }
 
     /**
+     * Ajax request to get graph options and info.
+     *
+     * @return json
+     */
+
+    function get_graph_options()
+    {
+        clearos_profile(__METHOD__, __LINE__);
+
+        header('Cache-Control: no-cache, must-revalidate');
+        header('Content-type: application/json');
+
+        // Load dependencies
+        //------------------
+
+        $this->load->library('network_visualiser/Network_Visualiser');
+
+        try {
+            echo json_encode(array('code' => 0, 'options' => $this->network_visualiser->get_graph_options()));
+        } catch (Exception $e) {
+            echo json_encode(Array('code' => clearos_exception_code($e), 'errmsg' => clearos_exception_message($e)));
+        }
+
+    }
+    /**
      * Ajax reset scan controller
      *
      * @return json

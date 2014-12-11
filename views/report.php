@@ -22,17 +22,17 @@ $this->lang->load('network_visualiser');
 
 echo row_open();
 
-foreach ($graph_options['pie'] as $id => $meta) {
+foreach ($graph_options as $id => $meta) {
     echo column_open(6);
-    $footer = progress_bar('progress-pie-' . $id, array('height' => 1, 'no_animation' => TRUE));
+    $footer = progress_bar('progress-' . $id, array('height' => 1, 'no_animation' => TRUE));
     echo chart_container(
         $meta['title'] . "<div class='pull-right'>" .
-        "<a href='#' class='nv-play-pause' id='pie-$id-play'><i class='fa fa-play'></i></a>" .
+        "<a href='#' class='nv-play-pause' id='$id-play'><i class='fa fa-play'></i></a>" .
         "</div>",
-        'pie-' . $id,
+        $id,
         array(
-            'id' => 'pie-' . $id . '-container',
-            'class' => 'nv-pie-chart',
+            'id' => $id . '-container',
+            'class' => 'nv-chart',
             'chart-size' => 'medium',
             'loading' => TRUE,
             'footer' => $footer,

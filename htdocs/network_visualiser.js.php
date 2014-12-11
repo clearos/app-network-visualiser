@@ -48,6 +48,8 @@ var report_simple = 0;
 var report_detailed = 1;
 var report_graphical = 2;
 var mapping = JSON.stringify('');
+var graph_options = JSON.stringify('');
+var lang_warning = '<?php echo lang('base_warning'); ?>';
 var lang_bits = '<?php echo lang('base_bits'); ?>';
 var lang_kilobits = '<?php echo lang('base_kilobits'); ?>';
 var lang_megabits = '<?php echo lang('base_megabits'); ?>';
@@ -62,6 +64,7 @@ $(document).ready(function() {
     options.no_animation = true;
     get_mapped_devices();
     get_data();
+    get_graph_options();
     $('.nv-play-pause').on('click', function (e) {
         e.preventDefault();
         if ($('#' + this.id + ' i').hasClass('fa-pause')) {
@@ -101,13 +104,15 @@ function get_data() {
         success: function(json) {
             var reset_ids = [];
             // Pie Graphs
-            $('.nv-pie-chart').each(function() {
+            $('.nv-chart').each(function() {
                 graphd = json[$(this).data('filename')];
                 if (graphd.code != 0 && graphd.timestamp <= graphd.stop) {
                     clearos_set_progress_bar('progress-' + this.id, graphd.next_update); 
                 } else if (graphd.code == 0) {
                     clearos_set_progress_bar('progress-' + this.id, 0); 
-                    update_pie_graph(this.id, graphd.data);
+                    update_graph(this.id, graphd.data);
+                    reset_ids.push(this.id);
+                } else {
                     reset_ids.push(this.id);
                 }
             }); 
@@ -116,6 +121,24 @@ function get_data() {
                 reset_scan(reset_ids);
         },
         error: function(xhr, text, err) {
+        }
+    });
+}
+
+function get_graph_options() {
+    $.ajax({
+        type: 'GET',
+        dataType: 'json',
+        url: '/app/network_visualiser/ajax/get_graph_options',
+        success: function(json) {
+            if (json.code != 0) {
+                clearos_dialog_box('unable_to_fetch_graph_options', lang_warning, json.errmsg);
+                return;
+            }
+            graph_options = json.options;
+        },
+        error: function(xhr, text, err) {
+            clearos_dialog_box('unable_to_fetch_graph_options', lang_warning, err);
         }
     });
 }
@@ -162,9 +185,10 @@ function format_number (bytes) {
     return ((i == 0)? (bits / Math.pow(1024, i)) : (bits / Math.pow(1024, i)).toFixed(1)) + ' ' + sizes[i];
 };
 
-function update_pie_graph(id, chart_data) {
+function update_graph(id, chart_data, display, options) {
     var datapoints = new Array();
 
+console.log(graph_options);
     if ($('#' + id + '-play i').hasClass('fa-pause')) {
         // Don't update graph...paused
         return;
@@ -172,15 +196,27 @@ function update_pie_graph(id, chart_data) {
 
     display = 'totalbps';
 
-    var type = 'up';
-    if (id.match('-dn'))
-        type = 'down';
-    else if (id.match('-proxy'))
-        type = 'proxy';
+    if (graph_options[id].type == 'usage')
+        display = 'totalbps';
+
     // Loop through all data and group by IP.
     for (var index = 0 ; index < chart_data.length; index++) {
-        if (index == 0)
-            console.log(chart_data[index]);
+    //    if (index == 0)
+     //       console.log(chart_data[index]);
+        if (graph_options[id].type == 'usage') {
+            if (index == 0) {
+                datapoints['used'] = 0;
+                datapoints['avail'] = 0;
+            }
+            if (graph_options[id].direction == 'dn') {
+                if (chart_data[index].dstbps != undefined && !isNaN(chart_data[index].dstbps))
+                    datapoints['used'] += chart_data[index].dstbps;
+            } else {
+                if (chart_data[index].srcbps != undefined && !isNaN(chart_data[index].srcbps))
+                    datapoints['used'] += parseInt(chart_data[index].srcbps);
+            }
+            continue;
+        }
         if (display == 'totalbps')
             total = chart_data[index].totalbps; 
         else
@@ -201,16 +237,35 @@ function update_pie_graph(id, chart_data) {
 
     }
 
+    console.log( datapoints['used']);
     var data = new Array();
-    counter = 0;
-    for (entry in datapoints) {
-        data[counter] = [entry,datapoints[entry]]; 
-        if (counter >= 9)
-            break;
-        counter++;
+    if (graph_options[id].type == 'usage') {
+        data[0] = ['Used', datapoints['used']]; 
+        data[1] = ['Avail', parseInt(graph_options[id].options['max'] * 1000) - datapoints['used']]; 
+    } else {
+
+        counter = 0;
+        for (entry in datapoints) {
+            data[counter] = [entry,datapoints[entry]]; 
+            if (counter >= 9)
+                break;
+            counter++;
+        }
     }
 
     var options = new Object;
+    if (graph_options[id].type == 'usage')
+        options = { 
+            pie: {
+                inner_radius: 0.5
+            },
+            series: {
+                color: {
+                    0: '#c2510f', // Used
+                    1: '#608921'// Avail
+                }
+            }
+        };
     clearos_pie_chart(id, data, options);
     clearos_loaded(id + '-container');
 }
