@@ -258,10 +258,11 @@ class Network_Visualiser
         $log_file = $this->get_log_file($interface, $interval, $filters);
 
         $shell = new Shell();
-        $args = "-i$interface -t$interval -f$log_file";
+        $args = "-i$interface -t$interval -f$log_file" . ($force ? " -r" : "");
         foreach ($filters as $filter) 
             $args.= " -x$filter";
 
+        clearos_profile(__METHOD__, __LINE__, "TODO start_scan " . $args);
         $options = array('background' => TRUE);
         $retval = $shell->execute(self::CMD_NV_SCAN, $args, TRUE, $options);
 
@@ -404,7 +405,8 @@ class Network_Visualiser
             $log_file = $this->start_scan(
                 $meta['interface'],
                 $meta['interval'],
-                $meta['filters']
+                $meta['filters'],
+                TRUE
             );
             array_push($log_files, $meta['log_file']);
         }
@@ -511,7 +513,7 @@ class Network_Visualiser
             } else {
                 $options[$interface] = array (
                     'interface' => $interface,
-                    'interval' => $this->get_get_interval(),
+                    'interval' => $this->get_interval(),
                     'chart' => 'pie',
                     'title' => 'LAN Traffic'
                 );

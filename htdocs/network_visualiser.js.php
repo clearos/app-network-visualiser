@@ -48,7 +48,7 @@ var report_simple = 0;
 var report_detailed = 1;
 var report_graphical = 2;
 var mapping = JSON.stringify('');
-var graph_options = JSON.stringify('');
+var graph_options = null;
 var lang_warning = '<?php echo lang('base_warning'); ?>';
 var lang_bits = '<?php echo lang('base_bits'); ?>';
 var lang_kilobits = '<?php echo lang('base_kilobits'); ?>';
@@ -57,6 +57,8 @@ var lang_gigabits = '<?php echo lang('base_gigabits'); ?>';
 var lang_kilobytes = '<?php echo lang('base_kilobytes'); ?>';
 var lang_kilobytes_per_second = '<?php echo lang('base_kilobytes_per_second'); ?>';
 var lang_next_update = '<?php echo lang('base_next_update'); ?>';
+var lang_available = '<?php echo lang('network_visualiser_available'); ?>';
+var lang_used = '<?php echo lang('network_visualiser_used'); ?>';
 
 $(document).ready(function() {
     var options = new Object();
@@ -187,8 +189,9 @@ function format_number (bytes) {
 
 function update_graph(id, chart_data, display, options) {
     var datapoints = new Array();
+    if (graph_options == null)
+        rturn;
 
-console.log(graph_options);
     if ($('#' + id + '-play i').hasClass('fa-pause')) {
         // Don't update graph...paused
         return;
@@ -237,11 +240,10 @@ console.log(graph_options);
 
     }
 
-    console.log( datapoints['used']);
     var data = new Array();
     if (graph_options[id].type == 'usage') {
-        data[0] = ['Used', datapoints['used']]; 
-        data[1] = ['Avail', parseInt(graph_options[id].options['max'] * 1000) - datapoints['used']]; 
+        data[0] = [lang_used, datapoints['used']]; 
+        data[1] = [lang_available, parseInt(graph_options[id].options['max'] * 1000) - datapoints['used']]; 
     } else {
 
         counter = 0;
@@ -257,12 +259,17 @@ console.log(graph_options);
     if (graph_options[id].type == 'usage')
         options = { 
             pie: {
-                inner_radius: 0.5
+                label: 'show',
+                inner_radius: 0.25,
+                label_format: 'label_format',
+                legend: {
+                    show: false,
+                },
             },
             series: {
                 color: {
-                    0: '#c2510f', // Used
-                    1: '#608921'// Avail
+                    0: '#c2510f', // Used FIXME - How to get from theme?
+                    1: '#608921'  // Avail
                 }
             }
         };
@@ -270,6 +277,9 @@ console.log(graph_options);
     clearos_loaded(id + '-container');
 }
 
+function label_format(label, series) {
+    return "<div style='font-size:8pt; text-align:center; padding:2px; color:white;'>" + Math.round(series.percent) + "% " + label.toLowerCase() + "</div>";
+}
 <?php
 // vim: ts=4 syntax=javascript
 ?>
