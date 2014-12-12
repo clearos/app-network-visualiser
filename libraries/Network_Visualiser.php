@@ -59,12 +59,14 @@ use \clearos\apps\base\Configuration_File as Configuration_File;
 use \clearos\apps\base\File as File;
 use \clearos\apps\base\Shell as Shell;
 use \clearos\apps\network\Iface_Manager as Iface_Manager;
+use \clearos\apps\network\Network_Utils as Network_Utils;
 use \clearos\apps\web_proxy\Squid as Squid;
 
 clearos_load_library('base/Configuration_File');
 clearos_load_library('base/File');
 clearos_load_library('base/Shell');
 clearos_load_library('network/Iface_Manager');
+clearos_load_library('network/Network_Utils');
 clearos_load_library('web_proxy/Squid');
 
 // Exceptions
@@ -253,16 +255,18 @@ class Network_Visualiser
 
     function start_scan($interface, $interval, $filters, $force = FALSE)
     {
-        clearos_profile(__METHOD__, __LINE__, "TODO start_scan");
+        clearos_profile(__METHOD__, __LINE__);
 
         $log_file = $this->get_log_file($interface, $interval, $filters);
 
         $shell = new Shell();
         $args = "-i$interface -t$interval -f$log_file" . ($force ? " -r" : "");
-        foreach ($filters as $filter) 
-            $args.= " -x$filter";
+        if ($filters != NULL) {
+            foreach ($filters as $filter) 
+                $args.= " -x'$filter'";
+        }
 
-        clearos_profile(__METHOD__, __LINE__, "TODO start_scan " . $args);
+        clearos_profile(__METHOD__, __LINE__, "SHIT" . $args);
         $options = array('background' => TRUE);
         $retval = $shell->execute(self::CMD_NV_SCAN, $args, TRUE, $options);
 
@@ -408,6 +412,7 @@ class Network_Visualiser
                 $meta['filters'],
                 TRUE
             );
+        clearos_profile(__METHOD__, __LINE__, 'TODO  starting scan with filters ' . json_encode($meta['filters']));
             array_push($log_files, $meta['log_file']);
         }
     }
@@ -427,6 +432,7 @@ class Network_Visualiser
         // Grab all WAN and LAN interfaces
 
         $iface_manager = new Iface_Manager();
+        $network_utils = new Network_Utils();
 
         $network_interfaces = $iface_manager->get_interface_details();
 
@@ -435,7 +441,7 @@ class Network_Visualiser
 
                 $limits = $this->get_max_limits($interface); 
 
-                if (!empty($limits)) {
+                if (FALSE && !empty($limits)) {
                     $options[$interface . '-usage-up'] = array (
                         'interface' => $interface,
                         'interval' => $this->get_interval(),
@@ -466,7 +472,10 @@ class Network_Visualiser
                     'type' => 'tracking',
                     'chart' => 'pie',
                     'direction' => 'dn',
-                    'filters' => NULL,
+                    'filters' => array("not src net " .
+                        $network_utils->get_network_address($details['address'], $details['netmask']) . "/" .
+                        $network_utils->get_prefix($details['netmask'])
+                    ),
                     'log_file' => $this->get_log_file($interface, $this->get_interval(), NULL),
                     'title' => $interface . ' - WAN Download'
                 );
@@ -478,7 +487,10 @@ class Network_Visualiser
                     'type' => 'tracking',
                     'chart' => 'pie',
                     'direction' => 'up',
-                    'filters' => NULL,
+                    'filters' => array ("not src net " .
+                        $network_utils->get_network_address($details['address'], $details['netmask']) . "/" .
+                        $network_utils->get_prefix($details['netmask'])
+                    ),
                     'log_file' => $this->get_log_file($interface, $this->get_interval(), NULL),
                     'title' => $interface . ' - WAN Upload'
                 );

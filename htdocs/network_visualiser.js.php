@@ -95,7 +95,7 @@ function get_data() {
     // Get distinct list of filenames from chart containers
     var log_files = [];
     $('.theme-chart-container').each(function (index) {
-        if ($.inArray($(this).data('filename'), log_files) === -1) 
+        if ($.inArray($(this).data('filename'), log_files) === -1)
             log_files.push($(this).data('filename'));
     });
     $.ajax({
@@ -109,15 +109,15 @@ function get_data() {
             $('.nv-chart').each(function() {
                 graphd = json[$(this).data('filename')];
                 if (graphd.code != 0 && graphd.timestamp <= graphd.stop) {
-                    clearos_set_progress_bar('progress-' + this.id, graphd.next_update); 
+                    clearos_set_progress_bar('progress-' + this.id, graphd.next_update);
                 } else if (graphd.code == 0) {
-                    clearos_set_progress_bar('progress-' + this.id, 0); 
+                    clearos_set_progress_bar('progress-' + this.id, 0);
                     update_graph(this.id, graphd.data);
                     reset_ids.push(this.id);
                 } else {
                     reset_ids.push(this.id);
                 }
-            }); 
+            });
             setTimeout('get_data()', 900);
             if (reset_ids.length > 0)
                 reset_scan(reset_ids);
@@ -157,7 +157,7 @@ function reset_scan(reset_ids) {
                 return;
             }
             $.each(reset_ids, function(index, id) {
-                clearos_set_progress_bar('progress-' + id, 100); 
+                clearos_set_progress_bar('progress-' + id, 100);
             });
         },
         error: function(xhr, text, err) {
@@ -190,7 +190,7 @@ function format_number (bytes) {
 function update_graph(id, chart_data, display, options) {
     var datapoints = new Array();
     if (graph_options == null)
-        rturn;
+        return;
 
     if ($('#' + id + '-play i').hasClass('fa-pause')) {
         // Don't update graph...paused
@@ -206,6 +206,7 @@ function update_graph(id, chart_data, display, options) {
     for (var index = 0 ; index < chart_data.length; index++) {
     //    if (index == 0)
      //       console.log(chart_data[index]);
+console.log(chart_data);
         if (graph_options[id].type == 'usage') {
             if (index == 0) {
                 datapoints['used'] = 0;
@@ -219,45 +220,53 @@ function update_graph(id, chart_data, display, options) {
                     datapoints['used'] += parseInt(chart_data[index].srcbps);
             }
             continue;
+        } else if (graph_options[id].type == 'tracking') {
+            if (display == 'totalbps') {
+                if (graph_options[id].direction == 'dn')
+                    value = chart_data[index].dstbps;
+                else
+                    value = chart_data[index].srcbps;
+            } else {
+                if (graph_options[id].direction == 'dn')
+                    value = chart_data[index].dstbytes;
+                else
+                    value = chart_data[index].srcbytes;
+            }
+            if (value == undefined || isNaN(value) || value == 0)
+                continue;
+            if (!(chart_data[index].src in mapping)) {
+                if (datapoints[chart_data[index].src] == undefined)
+                    datapoints[chart_data[index].src] = parseInt(value);
+                else
+                    datapoints[chart_data[index].src] += parseInt(value);
+            } else {
+                if (datapoints[mapping[chart_data[index].src].nickname] == undefined)
+                    datapoints[mapping[chart_data[index].src].nickname] = parseInt(value);
+                else
+                    datapoints[mapping[chart_data[index].src].nickname] += parseInt(value);
+            }
         }
-        if (display == 'totalbps')
-            total = chart_data[index].totalbps; 
-        else
-            total = chart_data[index].totalbytes; 
-        if (total == undefined || isNaN(total) || total == 0)
-            continue;
-        if (!(chart_data[index].src in mapping)) {
-            if (datapoints[chart_data[index].src] == undefined)
-                datapoints[chart_data[index].src] = parseInt(total);
-            else 
-                datapoints[chart_data[index].src] += parseInt(total);
-        } else {
-            if (datapoints[mapping[chart_data[index].src].nickname] == undefined)
-                datapoints[mapping[chart_data[index].src].nickname] = parseInt(total);
-            else 
-                datapoints[mapping[chart_data[index].src].nickname] += parseInt(total);
-        }
-
     }
 
     var data = new Array();
     if (graph_options[id].type == 'usage') {
-        data[0] = [lang_used, datapoints['used']]; 
-        data[1] = [lang_available, parseInt(graph_options[id].options['max'] * 1000) - datapoints['used']]; 
+        data[0] = [lang_used, datapoints['used']];
+        data[1] = [lang_available, parseInt(graph_options[id].options['max'] * 1000) - datapoints['used']];
     } else {
 
         counter = 0;
         for (entry in datapoints) {
-            data[counter] = [entry,datapoints[entry]]; 
+            data[counter] = [entry,datapoints[entry]];
             if (counter >= 9)
                 break;
             counter++;
         }
     }
 
+console.log(data);
     var options = new Object;
     if (graph_options[id].type == 'usage')
-        options = { 
+        options = {
             pie: {
                 label: 'show',
                 inner_radius: 0.25,

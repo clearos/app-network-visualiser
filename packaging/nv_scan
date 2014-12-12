@@ -157,6 +157,13 @@ try {
 
     $shell = new Shell();
     $args = "-i $interface --display text -t $interval --format '$" . implode("$,$", $network_visualiser->get_fields()) . "$'";
+    if ($filters != NULL) {
+        $args .= " -x '";
+        foreach ($filters as $filter)
+            $args .= "$filter and ";
+        $args = preg_replace('/ and $/', '', $args);
+        $args .= "'";
+    }
 
     $options = array('env' => "LANG=en_US", 'log' => basename($file->get_filename()));
 
