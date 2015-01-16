@@ -1,7 +1,7 @@
 <?php
 
-$lang['network_visualiser_app_description'] = 'The Network Visualiser app captures and displays data flow traversing your network in real-time, displaying source, destination and protocol information in addition to either bandwidth usage or total data captured over an interval.';
-$lang['network_visualiser_app_name'] = 'Network Visualiser';
+$lang['network_visualiser_app_description'] = 'The Network Visualizer app captures and displays data flow traversing your network in real-time, displaying source, destination and protocol information in addition to either bandwidth usage or total data captured over an interval.';
+$lang['network_visualiser_app_name'] = 'Network Visualizer';
 $lang['network_visualiser_display'] = 'Display';
 $lang['network_visualiser_display_invalid'] = 'Display is invalid.';
 $lang['network_visualiser_interval'] = 'Update Interval (seconds)';
