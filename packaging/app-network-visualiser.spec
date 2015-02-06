@@ -1,7 +1,7 @@
 
 Name: app-network-visualiser
 Epoch: 1
-Version: 2.0.14
+Version: 2.0.18
 Release: 1%{dist}
 Summary: Network Visualizer
 License: GPLv3
