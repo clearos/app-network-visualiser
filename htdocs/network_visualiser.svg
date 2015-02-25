@@ -1,0 +1,15 @@
+<svg version="1.1" class="clearos-svg clearfoundation app-vendor-clearfoundation app-free app-category-report app-sub-category-performance-and-resources" viewBox="0 0 400 400" preserveAspectRatio="xMinYMin" xmlns="http://www.w3.org/2000/svg" xmlns:xlink= "http://www.w3.org/1999/xlink">
+<path fill="#AA0707" d="M91.666,184.647"/>
+<path fill="#AA0707" d="M123.245,247.805"/>
+<path fill="#AA0707" d="M91.666,184.647"/>
+<path fill="#AA0707" d="M123.245,247.805"/>
+<g>
+	<polygon fill="#686868" points="1.381,356.135 1.381,356.166 72.875,356.166 72.875,334.674 27.963,334.674 27.963,66.292 
+		72.875,66.292 72.875,44.783 1.381,44.783 	"/>
+	<polygon fill="#686868" points="327.125,43.833 327.125,65.328 372.038,65.328 372.038,334.096 327.125,334.096 327.125,355.572 
+		398.619,355.572 398.619,43.833 	"/>
+	<path fill="#686868" d="M263.288,216.566c0,1.412,0,3.051,0,4.912c0,6.42,0.272,15.457,0.771,27.109
+		c0.707,14.912,1.141,23.805,1.35,26.68h-1.188L142.066,87.959h-29.439v224.082h24.078V184.654c0-18.379-0.803-38.604-2.456-60.675
+		h1.236l122.442,188.062h29.438V87.959h-24.077V216.566z"/>
+</g>
+</svg>
