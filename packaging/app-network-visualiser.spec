@@ -1,9 +1,9 @@
 
 Name: app-network-visualiser
 Epoch: 1
-Version: 2.0.18
+Version: 2.0.19
 Release: 1%{dist}
-Summary: Network Visualizer
+Summary: Network Visualiser
 License: GPLv3
 Group: ClearOS/Apps
 Source: %{name}-%{version}.tar.gz
@@ -13,10 +13,10 @@ Requires: app-base
 Requires: app-network
 
 %description
-The Network Visualizer app captures and displays data flow traversing your network in real-time, displaying source, destination and protocol information in addition to either bandwidth usage or total data captured over an interval.
+The Network Visualiser app captures and displays data flow traversing your network in real-time, displaying source, destination and protocol information in addition to either bandwidth usage or total data captured over an interval.
 
 %package core
-Summary: Network Visualizer - Core
+Summary: Network Visualiser - Core
 License: LGPLv3
 Group: ClearOS/Libraries
 Requires: app-base-core
@@ -24,7 +24,7 @@ Requires: app-network-core >= 1:1.4.3
 Requires: jnettop
 
 %description core
-The Network Visualizer app captures and displays data flow traversing your network in real-time, displaying source, destination and protocol information in addition to either bandwidth usage or total data captured over an interval.
+The Network Visualiser app captures and displays data flow traversing your network in real-time, displaying source, destination and protocol information in addition to either bandwidth usage or total data captured over an interval.
 
 This package provides the core API and libraries.
 

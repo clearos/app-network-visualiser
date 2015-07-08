@@ -121,6 +121,6 @@ class Network_Visualiser extends ClearOS_Controller
 
         // Load view
         //----------
-        $this->page->view_form('network_visualiser/report', $data, lang('network_visualiser_app_name'), array('type' => 'report'));
+        $this->page->view_form('network_visualiser/report', $data, lang('network_visualiser_app_name'), array('type' => MY_Page::TYPE_DASHBOARD));
     }
 }

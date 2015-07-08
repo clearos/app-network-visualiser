@@ -60,6 +60,7 @@ if ($report_type == Network_Visualiser::REPORT_DETAILED) {
 ///////////////////////////////////////////////////////////////////////////////
 
 echo form_open('network_visualiser_report');
+;
 
 if ($report_type == Network_Visualiser::REPORT_SIMPLE) {
     echo summary_table(
@@ -70,6 +71,7 @@ if ($report_type == Network_Visualiser::REPORT_SIMPLE) {
         array(
             'id' => 'report',
             'no_action' => TRUE,
+            'empty_table_message' => loading('normal', lang('base_loading')),
             'sorting-type' => array(
                 NULL,
                 'int',
@@ -87,6 +89,7 @@ if ($report_type == Network_Visualiser::REPORT_SIMPLE) {
         array(
             'id' => 'report',
             'no_action' => TRUE,
+            'empty_table_message' => loading('normal', lang('base_loading')),
             'sorting-type' => array(
                 NULL,
                 'int',
@@ -98,11 +101,13 @@ if ($report_type == Network_Visualiser::REPORT_SIMPLE) {
         )
     );
 } else if ($report_type == Network_Visualiser::REPORT_GRAPHICAL) {
-    echo "<div id='clear-chart' style='height:450px; width:100%;'>";
-    echo "    <div style='margin: 30 225 0 225;' class='theme-loading-normal'>";
-    echo lang('base_loading');
-    echo "    </div>";
-    echo "</div>";
+    echo box_open(
+        lang('network_visualiser_top_users') . ' - ' . 
+        ($display == 'totalbps' ? lang('network_visualiser_bandwidth') : lang('network_visualiser_total_transfer'))
+    );
+    echo box_content("<div id='clear-chart' style='height:450px; width:100%;'></div>");
+    echo box_footer('report-footer', '', array('loading' => TRUE));
+    echo box_close();
 }
 
 echo form_close();
