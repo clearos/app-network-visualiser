@@ -7,7 +7,7 @@
  * @package    network-visualiser
  * @subpackage views
  * @author     ClearFoundation <developer@clearfoundation.com>
- * @copyright  2011 ClearFoundation
+ * @copyright  2011-2015 ClearFoundation
  * @license    http://www.gnu.org/copyleft/gpl.html GNU General Public License version 3 or later
  * @link       http://www.clearfoundation.com/docs/developer/apps/flexshare/
  */
@@ -105,7 +105,7 @@ if ($report_type == Network_Visualiser::REPORT_SIMPLE) {
         lang('network_visualiser_top_users') . ' - ' . 
         ($display == 'totalbps' ? lang('network_visualiser_bandwidth') : lang('network_visualiser_total_transfer'))
     );
-    echo box_content("<div id='clear-chart' style='height:450px; width:100%;'></div>");
+    echo box_content("<div id='network_visualiser_chart' style='height:450px; width:100%;'></div>");
     echo box_footer('report-footer', '', array('loading' => TRUE));
     echo box_close();
 }

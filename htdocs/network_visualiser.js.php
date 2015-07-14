@@ -209,14 +209,25 @@ function graph_data(display, json) {
             datapoints[json.data[index].src] += parseInt(total/1024);
     }
 
-    var data = new Array();
+    var data = Array();
+    var data_titles = Array();
+    var data_types = Array('string', 'int');
+    var options = Array();
+    options.series_label_threshold = 0.1;
+
+    unit = lang_kilobytes;
+    if (display == 'totalbps')
+    	unit = lang_kilobytes_per_second;
+
+    options.series_label_format = Array();
+    options.series_label_format.label = false;
+    options.series_label_format.value = true;
+    options.series_label_format.unit = unit;
 
     counter = 0;
     for (entry in datapoints) {
-        data[counter] = {
-            data: datapoints[entry],
-            label: entry
-        }
+        data[counter] = Array(entry, datapoints[entry]);
+        data_titles[counter] = entry;
         if (counter >= 10)
             break;
         counter++;
@@ -225,31 +236,15 @@ function graph_data(display, json) {
     // Remove loading from footer
     $('.clearos-loading-overlay').remove();
 
-    $.plot('#clear-chart', data, {
-        series: {
-            pie: {
-                show: true,
-                radius: 1,
-                label: {
-                    show: true,
-                    radius: 3/4,
-                    formatter: labelFormatter,
-                    threshold: 0.1
-                },
-            }
-        },
-        legend: {
-            backgroundOpacity: 0
-        }
-    });
-}
-
-function labelFormatter(label, series) {
-    unit = lang_kilobytes;
-    if (display == 'totalbps')
-    	unit = lang_kilobytes_per_second;
-
-    return '<div class="theme-center-text">' + label + '<br/>' + Math.round(series.data[0][1]) + ' ' + unit + '</div>';
+    clearos_chart(
+        'network_visualiser_chart',
+        'pie',
+        data,
+        data_titles,
+        data_types,
+        Array(),
+        options
+    )
 }
 
 // vim: ts=4 syntax=javascript
