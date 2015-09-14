@@ -111,6 +111,10 @@ class Settings extends ClearOS_Controller
             $data['interface_options'] = $this->network_visualiser->get_interface_options();
             $data['display_options'] = $this->network_visualiser->get_display_options();
             $data['report_type_options'] = $this->network_visualiser->get_report_type_options();
+
+            // If interface has not been set, set first available
+            if ($data['interface'] == '')
+                $this->network_visualiser->set_interface(key($data['interface_options']));
         } catch (Exception $e) {
             $this->page->view_exception($e);
             return;

@@ -1,9 +1,9 @@
 
 Name: app-network-visualiser
 Epoch: 1
-Version: 2.1.6
+Version: 2.1.7
 Release: 1%{dist}
-Summary: Network Visualiser
+Summary: Network Visualizer
 License: GPLv3
 Group: ClearOS/Apps
 Source: %{name}-%{version}.tar.gz
@@ -13,10 +13,10 @@ Requires: app-base
 Requires: app-network
 
 %description
-The Network Visualiser app captures and displays data flow traversing your network in real-time, displaying source, destination and protocol information in addition to either bandwidth usage or total data captured over an interval.
+The Network Visualizer app captures and displays data flow traversing your network in real-time, displaying source, destination and protocol information in addition to either bandwidth usage or total data captured over an interval.
 
 %package core
-Summary: Network Visualiser - Core
+Summary: Network Visualizer - Core
 License: LGPLv3
 Group: ClearOS/Libraries
 Requires: app-base-core
@@ -24,7 +24,7 @@ Requires: app-network-core >= 1:1.4.3
 Requires: jnettop
 
 %description core
-The Network Visualiser app captures and displays data flow traversing your network in real-time, displaying source, destination and protocol information in addition to either bandwidth usage or total data captured over an interval.
+The Network Visualizer app captures and displays data flow traversing your network in real-time, displaying source, destination and protocol information in addition to either bandwidth usage or total data captured over an interval.
 
 This package provides the core API and libraries.
 
@@ -50,8 +50,6 @@ fi
 
 [ -x /usr/clearos/apps/network_visualiser/deploy/upgrade ] && /usr/clearos/apps/network_visualiser/deploy/upgrade
 
-
-
 exit 0
 
 %preun
@@ -64,8 +62,6 @@ if [ $1 -eq 0 ]; then
     logger -p local6.notice -t installer 'app-network-visualiser-core - uninstalling'
     [ -x /usr/clearos/apps/network_visualiser/deploy/uninstall ] && /usr/clearos/apps/network_visualiser/deploy/uninstall
 fi
-
-
 
 exit 0
 

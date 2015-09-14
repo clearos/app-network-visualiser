@@ -103,7 +103,7 @@ if ($report_type == Network_Visualiser::REPORT_SIMPLE) {
 } else if ($report_type == Network_Visualiser::REPORT_GRAPHICAL) {
     echo box_open(
         lang('network_visualiser_top_users') . ' - ' . 
-        ($display == 'totalbps' ? lang('network_visualiser_bandwidth') : lang('network_visualiser_total_transfer'))
+        ($display == 'totalbps' ? lang('network_bandwidth') : lang('network_visualiser_total_transfer'))
     );
     echo box_content("<div id='network_visualiser_chart' style='height:450px; width:100%;'></div>");
     echo box_footer('report-footer', '', array('loading' => TRUE));
